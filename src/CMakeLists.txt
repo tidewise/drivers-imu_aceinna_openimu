@@ -1,7 +1,8 @@
 rock_library(imu_aceinna_openimu
-    SOURCES Dummy.cpp
-    HEADERS Dummy.hpp)
+    SOURCES Protocol.cpp Driver.cpp
+    HEADERS Protocol.hpp Driver.hpp
+    DEPS_PKGCONFIG iodrivers_base)
 
-rock_executable(imu_aceinna_openimu_bin Main.cpp
+rock_executable(imu_aceinna_openimu_ctl Main.cpp
     DEPS imu_aceinna_openimu)
 

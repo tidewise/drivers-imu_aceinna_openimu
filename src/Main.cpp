@@ -1,10 +1,64 @@
 #include <iostream>
-#include <imu_aceinna_openimu/Dummy.hpp>
+#include <imu_aceinna_openimu/Driver.hpp>
+
+using namespace std;
+using namespace imu_aceinna_openimu;
+
+int usage()
+{
+    std::cerr
+        << "imu_aceinna_openimu_ctl URI [COMMAND] [ARGS]\n"
+        << "  URI        a valid iodrivers_base URI, e.g. serial:///dev/ttyUSB0:115200\n"
+        << "\n"
+        << "Known commands:\n"
+        << "  info       display information about the connected unit\n"
+        << "  find-rate  find the baud rate on a serial line. Do not specify the rate in the URI\n"
+        << std::flush;
+
+    return 0;
+}
 
 int main(int argc, char** argv)
 {
-    imu_aceinna_openimu::DummyClass dummyClass;
-    dummyClass.welcome();
+    if (argc < 3) {
+        std::cerr << "not enough arguments" << std::endl;
+        return usage();
+    }
 
-    return 0;
+    string uri(argv[1]);
+    string cmd(argv[2]);
+
+    Driver driver;
+    driver.setReadTimeout(base::Time::fromMilliseconds(100));
+    driver.setWriteTimeout(base::Time::fromMilliseconds(100));
+
+    if (cmd == "info") {
+        driver.openURI(uri);
+        std::cout << driver.getDeviceInfo() << std::endl;
+        return 0;
+    }
+    else if (cmd == "find-rate") {
+        int rates[] = { 38400, 57600, 115200, 230400, 0 };
+        for (int i = 0; ; ++i) {
+            int r = rates[i];
+            if (r == 0) {
+                std::cerr << "cannot find openIMU on " + uri << std::endl;
+                return 1;
+            }
+
+            std::cout << "trying " << r << std::endl;
+            try {
+                driver.openURI(uri + ":" + std::to_string(r));
+                std::cout << "found OpenIMU at " << r << " bauds" << std::endl;
+                break;
+            }
+            catch(iodrivers_base::TimeoutError&) {}
+        }
+        std::cout << driver.getDeviceInfo() << std::endl;
+        return 0;
+    }
+    else {
+        std::cerr << "unexpected command " << cmd << std::endl;
+        return usage();
+    }
 }

@@ -1,48 +1,42 @@
-imu_aceinna_openimu
-=============
-Driver for the AceINNA OpenIMU
+# imu_aceinna_openimu
 
+Driver for the [AceINNA OpenIMU](https://www.aceinna.com/openimu)
 
+This driver implements the OpenIMU protocol as provided by the default apps
+AceINNA distributes (the python-openimu package)
 
-License
--------
-dummy-license
+While it is part of the Rock project, this driver is pure CMake and C++ code. It can
+be reused on non-Rock environments provided that you also install its dependencies.
 
-Installation
-------------
-The easiest way to build and install this package is to use Rock's build system.
-See [this page](http://rock-robotics.org/stable/documentation/installation.html)
-on how to install Rock.
+The protocol documentation is based on the AceINNA Python library
 
-However, if you feel that it's too heavy for your needs, Rock aims at having
-most of its "library" packages (such as this one) to follow best practices. See
-[this page](http://rock-robotics.org/stable/documentation/packages/outside_of_rock.html)
-for installation instructions outside of Rock.
+## License
 
-Rock CMake Macros
------------------
+3-clause BSD License
 
-This package uses a set of CMake helper shipped as the Rock CMake macros.
-Documentations is available on [this page](http://rock-robotics.org/stable/documentation/packages/cmake_macros.html).
+Copyright 2019 (c) TideWise Ltda
 
-Rock Standard Layout
---------------------
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
 
-This directory structure follows some simple rules, to allow for generic build
-processes and simplify reuse of this project. Following these rules ensures that
-the Rock CMake macros automatically handle the project's build process and
-install setup properly.
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
 
-### Folder Structure
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
 
-| directory         |       purpose                                                        |
-| ----------------- | ------------------------------------------------------               |
-| src/              | Contains all header (*.h/*.hpp) and source files                     |
-| build/ *          | The target directory for the build process, temporary content        |
-| bindings/         | Language bindings for this package, e.g. put into subfolders such as |
-| ruby/             | Ruby language bindings                                               |
-| viz/              | Source files for a vizkit plugin / widget related to this library    |
-| resources/        | General resources such as images that are needed by the program      |
-| configuration/    | Configuration files for running the program                          |
-| external/         | When including software that needs a non standard installation process, or one that can be easily embedded include the external software directly here |
-| doc/              | should contain the existing doxygen file: doxygen.conf               |
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software without
+   specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
