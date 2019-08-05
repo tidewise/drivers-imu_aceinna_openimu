@@ -1,7 +1,7 @@
 rock_library(imu_aceinna_openimu
-    SOURCES Dummy.cpp
-    HEADERS Dummy.hpp)
+    SOURCES Protocol.cpp
+    HEADERS Protocol.hpp)
 
-rock_executable(imu_aceinna_openimu_bin Main.cpp
+rock_executable(imu_aceinna_openimu_ctl Main.cpp
     DEPS imu_aceinna_openimu)
 

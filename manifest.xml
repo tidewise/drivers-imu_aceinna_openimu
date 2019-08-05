@@ -1,6 +1,6 @@
 <package>
   <description brief="Driver for the AceINNA OpenIMU">
-  
+
   </description>
   <author>Sylvain Joyeux/sylvain.joyeux@tidewise.io</author>
   <license></license>
@@ -16,4 +16,5 @@
   -->
   <depend package="base/types" />
   <depend package="drivers/iodrivers_base" />
+  <test_depend package="google-test" />
 </package>
