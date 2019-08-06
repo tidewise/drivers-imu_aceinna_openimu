@@ -46,6 +46,28 @@ namespace imu_aceinna_openimu {
 
         /** Parse configuration parameters message (gA) */
         Configuration parseConfiguration(uint8_t const* buffer, int bufferSize);
+
+        /** Write a int64 parameter (uP)
+         *
+         * T can only be int64_t and std::string. Any other type will fail at
+         * linking time
+         */
+        template<typename T>
+        uint8_t* writeConfiguration(uint8_t* buffer, int index, T value);
+
+        /** Parse configuration parameters message (gA) */
+        Configuration parseConfiguration(uint8_t const* buffer, int bufferSize);
+
+        /** Query the value of a single configuration parameter (gP) */
+        uint8_t* queryConfigurationParameter(uint8_t* buffer, int index);
+
+        /** Parse a read of a single configuration property (gP)
+         *
+         * T can only be int64_t and std::string. Any other type will fail at
+         * linking time
+         */
+        template<typename T>
+        T parseConfigurationParameter(uint8_t* buffer, int bufferSize, int expectedIndex);
     }
 }
 

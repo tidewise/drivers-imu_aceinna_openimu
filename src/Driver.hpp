@@ -5,13 +5,18 @@
 #include <imu_aceinna_openimu/Configuration.hpp>
 
 namespace imu_aceinna_openimu {
-    /**
-     *
-     */
+    struct ConfigurationWriteFailed : public std::runtime_error {
+        using std::runtime_error::runtime_error;
+    };
+
     class Driver : public iodrivers_base::Driver {
+    private:
         static const int BUFFER_SIZE = 256 * 15;
         uint8_t mWriteBuffer[BUFFER_SIZE];
         uint8_t mReadBuffer[BUFFER_SIZE];
+
+        template<typename T>
+        void writeConfigurationGeneric(int index, T value, bool validate);
 
         virtual int extractPacket(uint8_t const* buffer, size_t buffer_size) const;
 
@@ -33,6 +38,12 @@ namespace imu_aceinna_openimu {
 
         std::string getDeviceInfo() const;
         Configuration getConfiguration();
+
+        template<typename T>
+        void writeConfiguration(int index, T value, bool validate = false);
+
+        template<typename T>
+        T readConfiguration(int index);
     };
 }
 

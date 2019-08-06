@@ -2,6 +2,7 @@
 #include <imu_aceinna_openimu/Endianness.hpp>
 #include <cstring>
 #include <stdexcept>
+#include <iostream>
 
 using namespace std;
 using namespace imu_aceinna_openimu;
@@ -137,4 +138,63 @@ Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize
         reinterpret_cast<char const*>(buffer + std::min(64, bufferSize))
     );
     return ret;
+}
+
+uint8_t* protocol::queryConfigurationParameter(uint8_t* buffer, int index) {
+    uint8_t payload[4];
+    endianness::encode<uint32_t>(payload, index);
+    return formatPacket(buffer, "gP", payload, 4);
+}
+
+static void validateConfigurationParameter(uint8_t const* buffer, int bufferSize,
+                                           int expectedIndex) {
+    if (bufferSize != 12) {
+        throw std::invalid_argument("unexpected buffer size for gP response, "
+                                    "expected 12 but got " + to_string(bufferSize));
+    }
+    int32_t actualIndex;
+    endianness::decode<int32_t>(buffer, actualIndex);
+    if (actualIndex != expectedIndex) {
+        throw std::invalid_argument("was expecting a read of configuration parameter " +
+                                    to_string(expectedIndex) + " but got " +
+                                    to_string(actualIndex));
+    }
+}
+
+template<> string protocol::parseConfigurationParameter<string>(
+    uint8_t* buffer, int bufferSize, int expectedIndex) {
+    validateConfigurationParameter(buffer, bufferSize, expectedIndex);
+    return string(
+        reinterpret_cast<char const*>(buffer + 4),
+        reinterpret_cast<char const*>(buffer + 12)
+    );
+}
+
+template<> int64_t protocol::parseConfigurationParameter<int64_t>(
+    uint8_t* buffer, int bufferSize, int expectedIndex) {
+    validateConfigurationParameter(buffer, bufferSize, expectedIndex);
+    int64_t value;
+    endianness::decode<int64_t>(buffer + 4, value);
+    return value;
+}
+
+template<>
+uint8_t* protocol::writeConfiguration<int64_t>(uint8_t* buffer, int index, int64_t value) {
+    uint8_t payload[12];
+    endianness::encode<uint32_t>(payload, index);
+    endianness::encode<int64_t>(payload + 4, value);
+    return formatPacket(buffer, "uP", payload, 12);
+}
+
+template<>
+uint8_t* protocol::writeConfiguration<std::string>(uint8_t* buffer, int index, std::string value) {
+    if (value.length() > 8) {
+        throw std::invalid_argument("cannot encode strings longer than 8 characters");
+    }
+
+    uint8_t payload[12];
+    memset(payload, 0, 12);
+    endianness::encode<uint32_t>(payload, index);
+    memcpy(payload + 4, &(value.at(0)), value.length());
+    return formatPacket(buffer, "uP", payload, 12);
 }

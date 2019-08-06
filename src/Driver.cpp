@@ -66,6 +66,48 @@ Configuration Driver::getConfiguration()
         packetSize - protocol::PACKET_OVERHEAD);
 }
 
+template<typename T>
+string to_string(T value) {
+    return std::to_string(value);
+}
+string to_string(string value) {
+    return value;
+}
+
+template <typename T>
+void Driver::writeConfiguration(int index, T value, bool validate)
+{
+    auto packetEnd = protocol::writeConfiguration(mWriteBuffer, index, value);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+
+    if (validate) {
+        auto actual = readConfiguration<T>(index);
+        if (actual != value) {
+            throw ConfigurationWriteFailed(
+                "writing configuration parameter " + to_string(index) + " failed. "
+                "Current property value is " + to_string(actual) +
+                ", expected " + to_string(value));
+        }
+    }
+}
+template void Driver::writeConfiguration<int64_t>(int, int64_t, bool);
+template void Driver::writeConfiguration<string>(int, string, bool);
+
+template<typename T>
+T Driver::readConfiguration(int index)
+{
+    auto packetEnd = protocol::queryConfigurationParameter(mWriteBuffer, index);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    return protocol::parseConfigurationParameter<T>(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD,
+        index);
+}
+template int64_t Driver::readConfiguration<int64_t>(int index);
+template string Driver::readConfiguration<string>(int index);
+
 string Driver::getDeviceInfo() const
 {
     return mDeviceInfo;
