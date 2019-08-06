@@ -94,6 +94,15 @@ void Driver::writeConfiguration(int index, T value, bool validate)
 template void Driver::writeConfiguration<int64_t>(int, int64_t, bool);
 template void Driver::writeConfiguration<string>(int, string, bool);
 
+void Driver::writeConfiguration(Configuration const& conf, bool validate)
+{
+    writeConfiguration(3, conf.periodic_packet_type, validate);
+    writeConfiguration<int64_t>(4, conf.periodic_packet_rate, validate);
+    writeConfiguration<int64_t>(5, conf.acceleration_low_pass_filter, validate);
+    writeConfiguration<int64_t>(6, conf.angular_velocity_low_pass_filter, validate);
+    writeConfiguration(7, conf.orientation, validate);
+}
+
 template<typename T>
 T Driver::readConfiguration(int index)
 {
@@ -107,6 +116,19 @@ T Driver::readConfiguration(int index)
 }
 template int64_t Driver::readConfiguration<int64_t>(int index);
 template string Driver::readConfiguration<string>(int index);
+
+void Driver::saveConfiguration()
+{
+    auto packetEnd = protocol::queryConfigurationSave(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+}
+
+void Driver::setBaudrate(int rate)
+{
+    auto packetEnd = protocol::writeConfiguration<int64_t>(mWriteBuffer, 2, rate);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+}
 
 string Driver::getDeviceInfo() const
 {

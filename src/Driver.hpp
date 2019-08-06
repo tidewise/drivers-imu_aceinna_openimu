@@ -39,8 +39,14 @@ namespace imu_aceinna_openimu {
         std::string getDeviceInfo() const;
         Configuration readConfiguration();
 
+        void setBaudrate(int rate);
+
+        void writeConfiguration(Configuration const& configuration, bool validate = false);
+
         template<typename T>
         void writeConfiguration(int index, T value, bool validate = false);
+
+        void saveConfiguration();
 
         template<typename T>
         T readConfiguration(int index);

@@ -106,6 +106,20 @@ int main(int argc, char** argv)
             driver.writeConfiguration(definition->index, param_value, true);
         }
     }
+    else if (cmd == "set-rate") {
+        if (argc != 4) {
+            std::cerr << "set-rate expectes a single RATE argument\n" << std::endl;
+            usage();
+            return 0;
+        }
+        int rate = stoll(argv[3]);
+        cout << "Changing baud rate to " << rate << std::endl;
+        driver.openURI(uri);
+        driver.setBaudrate(stoll(argv[3]));
+        driver.saveConfiguration();
+        cout << "You need to restart the IMU for the change to take effect" << std::endl;
+        return 0;
+    }
     else if (cmd == "find-rate") {
         int rates[] = { 38400, 57600, 115200, 230400, 0 };
         for (int i = 0; ; ++i) {

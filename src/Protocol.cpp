@@ -198,3 +198,7 @@ uint8_t* protocol::writeConfiguration<std::string>(uint8_t* buffer, int index, s
     memcpy(payload + 4, &(value.at(0)), value.length());
     return formatPacket(buffer, "uP", payload, 12);
 }
+
+uint8_t* protocol::queryConfigurationSave(uint8_t* buffer) {
+    return formatPacket(buffer, "sC", nullptr, 0);
+}
