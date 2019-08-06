@@ -56,7 +56,7 @@ string Driver::queryDeviceInfo()
         packetSize - protocol::PACKET_OVERHEAD);
 }
 
-Configuration Driver::getConfiguration()
+Configuration Driver::readConfiguration()
 {
     auto packetEnd = protocol::queryConfiguration(mWriteBuffer);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);

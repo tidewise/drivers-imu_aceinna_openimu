@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 
     if (cmd == "info") {
         driver.openURI(uri);
-        auto conf = driver.getConfiguration();
+        auto conf = driver.readConfiguration();
 
         cout
             << driver.getDeviceInfo() << "\n"
