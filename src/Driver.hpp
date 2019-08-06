@@ -2,6 +2,7 @@
 #define IMU_ACEINNA_OPENIMU_DRIVER_HPP
 
 #include <iodrivers_base/Driver.hpp>
+#include <imu_aceinna_openimu/Configuration.hpp>
 
 namespace imu_aceinna_openimu {
     /**
@@ -31,6 +32,7 @@ namespace imu_aceinna_openimu {
         void openURI(std::string const& uri);
 
         std::string getDeviceInfo() const;
+        Configuration getConfiguration();
     };
 }
 

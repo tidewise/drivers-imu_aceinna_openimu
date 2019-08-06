@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <imu_aceinna_openimu/Configuration.hpp>
 
 namespace imu_aceinna_openimu {
     namespace protocol {
@@ -39,7 +40,13 @@ namespace imu_aceinna_openimu {
         /** Parse a device info response
          */
         std::string parseDeviceInfo(uint8_t const* payload, int size);
-    };
+
+        /** Query the configuration parameters (gA) */
+        uint8_t* queryConfiguration(uint8_t* buffer);
+
+        /** Parse configuration parameters message (gA) */
+        Configuration parseConfiguration(uint8_t const* buffer, int bufferSize);
+    }
 }
 
 #endif

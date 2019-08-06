@@ -7,8 +7,8 @@
 namespace imu_aceinna_openimu {
     namespace endianness {
         template<typename T>
-        uint8_t* decode(uint8_t const* buffer, T& value,
-                        typename std::enable_if<sizeof(T) == 8>::type* enabler)
+        uint8_t const* decode(uint8_t const* buffer, T& value,
+                              typename std::enable_if<sizeof(T) == 8>::type* enabler = nullptr)
         {
             uint64_t result =
                 static_cast<uint64_t>(buffer[0]) << 0 |
@@ -24,8 +24,8 @@ namespace imu_aceinna_openimu {
         }
 
         template<typename T>
-        uint8_t* decode(uint8_t const* buffer, T& value,
-                        typename std::enable_if<sizeof(T) == 4>::type* enabler)
+        uint8_t const* decode(uint8_t const* buffer, T& value,
+                              typename std::enable_if<sizeof(T) == 4>::type* enabler = nullptr)
         {
             uint32_t result =
                 static_cast<uint64_t>(buffer[0]) << 0 |
@@ -37,8 +37,8 @@ namespace imu_aceinna_openimu {
         }
 
         template<typename T>
-        uint8_t* decode(uint8_t const* buffer, T& value,
-                        typename std::enable_if<sizeof(T) == 2>::type* enabler)
+        uint8_t const* decode(uint8_t const* buffer, T& value,
+                              typename std::enable_if<sizeof(T) == 2>::type* enabler = nullptr)
         {
             uint16_t result =
                 static_cast<uint16_t>(buffer[0]) << 0 |
@@ -48,8 +48,8 @@ namespace imu_aceinna_openimu {
         }
 
         template<typename T>
-        uint8_t* decode(uint8_t const* buffer, T& value,
-                        typename std::enable_if<sizeof(T) == 1>::type* enabler)
+        uint8_t const* decode(uint8_t const* buffer, T& value,
+                              typename std::enable_if<sizeof(T) == 1>::type* enabler = nullptr)
         {
             value = reinterpret_cast<T const&>(buffer[0]);
             return buffer + 1;
@@ -57,7 +57,7 @@ namespace imu_aceinna_openimu {
 
         template<typename T>
         uint8_t* encode(uint8_t* buffer, T const& value,
-                        typename std::enable_if<sizeof(T) == 8>::type* enabler)
+                        typename std::enable_if<sizeof(T) == 8>::type* enabler = nullptr)
         {
             uint64_t bytes = reinterpret_cast<uint64_t const&>(value);
             buffer[0] = (bytes >> 0) & 0xFF;
@@ -73,7 +73,7 @@ namespace imu_aceinna_openimu {
 
         template<typename T>
         uint8_t* encode(uint8_t* buffer, T const& value,
-                        typename std::enable_if<sizeof(T) == 4>::type* enabler)
+                        typename std::enable_if<sizeof(T) == 4>::type* enabler = nullptr)
         {
             uint32_t bytes = reinterpret_cast<uint32_t const&>(value);
             buffer[0] = (bytes >> 0) & 0xFF;
@@ -85,7 +85,7 @@ namespace imu_aceinna_openimu {
 
         template<typename T>
         uint8_t* encode(uint8_t* buffer, T const& value,
-                        typename std::enable_if<sizeof(T) == 2>::type* enabler)
+                        typename std::enable_if<sizeof(T) == 2>::type* enabler = nullptr)
         {
             uint16_t bytes = reinterpret_cast<uint16_t const&>(value);
             buffer[0] = (bytes >> 0) & 0xFF;
@@ -95,7 +95,7 @@ namespace imu_aceinna_openimu {
 
         template<typename T>
         uint8_t* encode(uint8_t* buffer, T const& value,
-                        typename std::enable_if<sizeof(T) == 1>::type* enabler)
+                        typename std::enable_if<sizeof(T) == 1>::type* enabler = nullptr)
         {
             buffer[0] = reinterpret_cast<uint8_t const&>(value);
             return buffer + 1;

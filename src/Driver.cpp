@@ -56,6 +56,16 @@ string Driver::queryDeviceInfo()
         packetSize - protocol::PACKET_OVERHEAD);
 }
 
+Configuration Driver::getConfiguration()
+{
+    auto packetEnd = protocol::queryConfiguration(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    return protocol::parseConfiguration(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD);
+}
+
 string Driver::getDeviceInfo() const
 {
     return mDeviceInfo;

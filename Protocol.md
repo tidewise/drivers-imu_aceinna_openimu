@@ -74,11 +74,11 @@ different payload.
 |-------|------|-------------|
 | 0 | uint64 | Data CRC |
 | 1 | uint64 | Data Size |
-| 2 | int64 | Baud Rate (115200, 57600, 230400, 38400) |
+| 2 | int64 | Baud Rate (230400, 115200, 57600, 38400) |
 | 3 | char[8] | Periodic Packet Type |
 | 4 | int64 | Periodic Packet Rate (200,1 00, 50, 20, 10, 5, 2, 0) |
 | 5 | int64 | Accel low-pass filter (50, 40, 25, 20, 10, 5, 2) |
-| 6 | int64 | Rate low-pass filter (50, 40, 25, 20, 10, 5, 2) |
+| 6 | int64 | Angular velocity low-pass filter (50, 40, 25, 20, 10, 5, 2) |
 | 7 | char[8] | Orientation ("+X+Y+Z") |
 
 ## pG - Get device serial number and factory ID
@@ -121,7 +121,7 @@ different payload.
 | 24 | char[8] | Periodic Packet Type |
 | 32 | int64 | Periodic Packet Rate (200,1 00, 50, 20, 10, 5, 2, 0) |
 | 40 | int64 | Accel low-pass filter (50, 40, 25, 20, 10, 5, 2) |
-| 48 | int64 | Rate low-pass filter (50, 40, 25, 20, 10, 5, 2) |
+| 48 | int64 | Angular velocity low-pass filter (50, 40, 25, 20, 10, 5, 2) |
 | 56 | char[8] | Orientation ("+X+Y+Z") |
 
 ## gP - Get single parameter

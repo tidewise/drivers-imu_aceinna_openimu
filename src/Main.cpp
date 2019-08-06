@@ -34,7 +34,17 @@ int main(int argc, char** argv)
 
     if (cmd == "info") {
         driver.openURI(uri);
-        std::cout << driver.getDeviceInfo() << std::endl;
+        auto conf = driver.getConfiguration();
+
+        std::cout
+            << driver.getDeviceInfo() << "\n"
+            << "Periodic packet type: " << conf.periodic_packet_type << "\n"
+            << "Periodic packet rate: " << conf.periodic_packet_rate << "\n"
+            << "Angular velocity low-pass filter: " << conf.angular_velocity_low_pass_filter << "\n"
+            << "Acceleration low-pass filter: " << conf.acceleration_low_pass_filter << "\n"
+            << "Orientation: " << conf.orientation << "\n"
+            << std::flush;
+
         return 0;
     }
     else if (cmd == "find-rate") {

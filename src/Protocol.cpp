@@ -1,9 +1,29 @@
 #include <imu_aceinna_openimu/Protocol.hpp>
 #include <imu_aceinna_openimu/Endianness.hpp>
 #include <cstring>
+#include <stdexcept>
 
 using namespace std;
 using namespace imu_aceinna_openimu;
+using endianness::decode;
+
+struct ConfigurationParameter
+{
+    int index;
+    int offset;
+    enum DATA_TYPE { UINT64, INT64, CHAR8 };
+    DATA_TYPE type;
+    char const* name;
+};
+
+static const ConfigurationParameter CONFIGURATION[] = {
+    { 2, 16, ConfigurationParameter::UINT64, "Baud Rate" },
+    { 3, 24, ConfigurationParameter::CHAR8, "Periodic Packet Type" },
+    { 3, 32, ConfigurationParameter::INT64, "Periodic Packet Rate" },
+    { 3, 40, ConfigurationParameter::INT64, "Acceleration low-pass filter" },
+    { 3, 48, ConfigurationParameter::INT64, "Angular velocity low-pass filter" },
+    { 3, 56, ConfigurationParameter::CHAR8, "Orientation" }
+};
 
 int protocol::extractPacket(uint8_t const* buffer, int bufferSize)
 {
@@ -91,4 +111,30 @@ uint8_t* protocol::queryDeviceInfo(uint8_t* buffer)
 std::string protocol::parseDeviceInfo(uint8_t const* payload, int size)
 {
     return std::string(payload, payload + size);
+}
+
+uint8_t* protocol::queryConfiguration(uint8_t* buffer)
+{
+    return protocol::formatPacket(buffer, "gA", nullptr, 0);
+}
+
+Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize)
+{
+    if (bufferSize < 56) {
+        throw std::invalid_argument("buffer size for message gA (configuration) "\
+                                    "smaller than 56 bytes");
+    }
+    Configuration ret;
+    ret.periodic_packet_type = string(
+        reinterpret_cast<char const*>(buffer + 24),
+        reinterpret_cast<char const*>(buffer + 26)
+    );
+    decode(buffer + 32, ret.periodic_packet_rate);
+    decode(buffer + 40, ret.acceleration_low_pass_filter);
+    decode(buffer + 48, ret.angular_velocity_low_pass_filter);
+    ret.orientation = string(
+        reinterpret_cast<char const*>(buffer + 56),
+        reinterpret_cast<char const*>(buffer + std::min(64, bufferSize))
+    );
+    return ret;
 }
