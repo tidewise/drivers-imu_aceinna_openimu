@@ -153,6 +153,9 @@ different payload.
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
 | 0 | int32 | Parameter Index |
+| 4 | int32 | Result |
+
+Result may be 0 (OK), -1 (INVALID_PARAM) or -2 (INVALID_VALUE)
 
 ## sC - Save configuration to flash
 

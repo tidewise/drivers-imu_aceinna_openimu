@@ -20,6 +20,13 @@ namespace imu_aceinna_openimu {
         // Biggest block that can be written when flashing the firmware
         static const int MAX_APP_BLOCK_SIZE = 240;
 
+        enum WriteStatus {
+            WRITE_STATUS_OK = 0,
+            WRITE_STATUS_INVALID_INDEX,
+            WRITE_STATUS_INVALID_VALUE,
+            WRITE_STATUS_UNKNOWN
+        };
+
         /** Implements iodrivers_base's extractPacket protocol
          *
          * See iodrivers_base::extractPacket for detailed information
@@ -64,6 +71,9 @@ namespace imu_aceinna_openimu {
          */
         template<typename T>
         uint8_t* writeConfiguration(uint8_t* buffer, int index, T value);
+
+        /** Parse the status from the configuration write reply */
+        WriteStatus parseWriteConfigurationStatus(uint8_t* buffer, int bufferSize);
 
         /** Parse configuration parameters message (gA) */
         Configuration parseConfiguration(uint8_t const* buffer, int bufferSize);

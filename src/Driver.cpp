@@ -109,7 +109,26 @@ void Driver::writeConfiguration(int index, T value, bool validate)
 {
     auto packetEnd = protocol::writeConfiguration(mWriteBuffer, index, value);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
-    readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    int packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    auto status = protocol::parseWriteConfigurationStatus(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD);
+
+    if (status != protocol::WRITE_STATUS_OK) {
+        string error_message;
+        if (status == protocol::WRITE_STATUS_INVALID_INDEX) {
+            error_message = "invalid parameter index";
+        }
+        else if (status == protocol::WRITE_STATUS_INVALID_VALUE) {
+            error_message = "invalid value " + to_string(value);
+        }
+        else {
+            error_message = "unknown error";
+        }
+        throw ConfigurationWriteFailed(
+            "writing configuration parameter " + to_string(index) + " failed: " +
+            error_message);
+    }
 
     if (validate) {
         auto actual = readConfiguration<T>(index);

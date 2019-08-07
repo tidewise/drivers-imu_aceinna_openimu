@@ -209,6 +209,30 @@ uint8_t* protocol::writeConfiguration<std::string>(uint8_t* buffer, int index, s
     return formatPacket(buffer, "uP", payload, 12);
 }
 
+protocol::WriteStatus protocol::parseWriteConfigurationStatus(
+    uint8_t* buffer, int bufferSize) {
+    if (bufferSize != 4) {
+        throw std::invalid_argument(
+            "unexpected reply size for uP (write configuration parameter), "
+            "expected 4 bytes, got " + to_string(bufferSize));
+    }
+
+    int32_t ret;
+    endianness::decode<int32_t>(buffer, ret);
+    if (ret == 0) {
+        return WRITE_STATUS_OK;
+    }
+    else if (ret == -1) {
+        return WRITE_STATUS_INVALID_INDEX;
+    }
+    else if (ret == -2) {
+        return WRITE_STATUS_INVALID_VALUE;
+    }
+    else {
+        return WRITE_STATUS_UNKNOWN;
+    }
+}
+
 uint8_t* protocol::queryConfigurationSave(uint8_t* buffer) {
     return formatPacket(buffer, "sC", nullptr, 0);
 }
