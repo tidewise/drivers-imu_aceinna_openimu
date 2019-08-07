@@ -65,6 +65,7 @@ int protocol::extractPacket(uint8_t const* buffer, int bufferSize)
         return packetSize;
     }
     else {
+        std::cout << "CRC: " << hex << expectedCRC << std::endl;
         return -1;
     }
 }
@@ -104,12 +105,22 @@ uint8_t* protocol::formatPacket(uint8_t* buffer, char const* code,
     return buffer + PACKET_OVERHEAD + size;
 }
 
-uint8_t* protocol::queryDeviceInfo(uint8_t* buffer)
+uint8_t* protocol::queryDeviceID(uint8_t* buffer)
 {
     return protocol::formatPacket(buffer, "pG", nullptr, 0);
 }
 
-std::string protocol::parseDeviceInfo(uint8_t const* payload, int size)
+std::string protocol::parseDeviceID(uint8_t const* payload, int size)
+{
+    return std::string(payload, payload + size);
+}
+
+uint8_t* protocol::queryAppVersion(uint8_t* buffer)
+{
+    return protocol::formatPacket(buffer, "gV", nullptr, 0);
+}
+
+std::string protocol::parseAppVersion(uint8_t const* payload, int size)
 {
     return std::string(payload, payload + size);
 }

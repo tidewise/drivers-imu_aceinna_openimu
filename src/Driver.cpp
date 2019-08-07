@@ -43,17 +43,26 @@ int Driver::readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* com
 void Driver::openURI(std::string const& uri)
 {
     iodrivers_base::Driver::openURI(uri);
-    mDeviceInfo = queryDeviceInfo();
+    mDeviceInfo = readDeviceInfo();
 }
 
-string Driver::queryDeviceInfo()
+DeviceInfo Driver::readDeviceInfo()
 {
-    auto packetEnd = protocol::queryDeviceInfo(mWriteBuffer);
+    auto packetEnd = protocol::queryDeviceID(mWriteBuffer);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
     auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
-    return protocol::parseDeviceInfo(
+    string deviceID = protocol::parseDeviceID(
         mReadBuffer + protocol::PAYLOAD_OFFSET,
         packetSize - protocol::PACKET_OVERHEAD);
+
+    packetEnd = protocol::queryAppVersion(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    string appVersion = protocol::parseAppVersion(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD);
+
+    return DeviceInfo { deviceID, appVersion };
 }
 
 Configuration Driver::readConfiguration()
@@ -130,7 +139,7 @@ void Driver::setBaudrate(int rate)
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
 }
 
-string Driver::getDeviceInfo() const
+DeviceInfo Driver::getDeviceInfo() const
 {
     return mDeviceInfo;
 }

@@ -64,9 +64,11 @@ int main(int argc, char** argv)
     if (cmd == "info") {
         driver.openURI(uri);
         auto conf = driver.readConfiguration();
+        auto info = driver.getDeviceInfo();
 
         cout
-            << driver.getDeviceInfo() << "\n"
+            << "ID: " << info.device_id << "\n"
+            << "App: " << info.app_version << "\n"
             << "Periodic packet type: " << conf.periodic_packet_type << "\n"
             << "Periodic packet rate: " << conf.periodic_packet_rate << "\n"
             << "Angular velocity low-pass filter: " << conf.angular_velocity_low_pass_filter << "\n"
@@ -137,7 +139,11 @@ int main(int argc, char** argv)
             }
             catch(iodrivers_base::TimeoutError&) {}
         }
-        cout << driver.getDeviceInfo() << endl;
+        auto info = driver.getDeviceInfo();
+
+        cout
+            << "ID: " << info.device_id << "\n"
+            << "App: " << info.app_version << std::endl;
         return 0;
     }
     else {

@@ -2,6 +2,7 @@
 #define IMU_ACEINNA_OPENIMU_DRIVER_HPP
 
 #include <iodrivers_base/Driver.hpp>
+#include <imu_aceinna_openimu/DeviceInfo.hpp>
 #include <imu_aceinna_openimu/Configuration.hpp>
 
 namespace imu_aceinna_openimu {
@@ -29,14 +30,14 @@ namespace imu_aceinna_openimu {
         /** @overload */
         int readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* command);
 
-        std::string mDeviceInfo;
-        std::string queryDeviceInfo();
+        DeviceInfo mDeviceInfo;
+        DeviceInfo readDeviceInfo();
 
     public:
         Driver();
         void openURI(std::string const& uri);
 
-        std::string getDeviceInfo() const;
+        DeviceInfo getDeviceInfo() const;
         Configuration readConfiguration();
 
         void setBaudrate(int rate);

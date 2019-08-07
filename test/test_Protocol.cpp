@@ -36,18 +36,32 @@ TEST_F(ProtocolTest, it_accepts_a_packet_that_starts_at_zero_and_has_a_valid_CRC
     ASSERT_EQ(7, extractPacket(&buffer[0], 10));
 }
 
-TEST_F(ProtocolTest, it_formats_a_device_info_query) {
+TEST_F(ProtocolTest, it_formats_a_device_id_query) {
     std::vector<uint8_t> buffer(MAX_PACKET_SIZE, 0);
-    auto packetEnd = queryDeviceInfo(&buffer[0]);
+    auto packetEnd = queryDeviceID(&buffer[0]);
 
     ASSERT_THAT(std::vector<uint8_t>(&buffer[0], packetEnd),
         ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'p', 'G', 0, 0x5d, 0x5f));
 }
 
-TEST_F(ProtocolTest, it_parses_a_device_info_response) {
+TEST_F(ProtocolTest, it_parses_a_device_id_response) {
     std::vector<uint8_t> buffer = { 'a', 'b', 'C', 'd' };
 
-    ASSERT_EQ("abCd", parseDeviceInfo(&buffer[0], 4));
+    ASSERT_EQ("abCd", parseDeviceID(&buffer[0], 4));
+}
+
+TEST_F(ProtocolTest, it_formats_an_app_version_query) {
+    std::vector<uint8_t> buffer(MAX_PACKET_SIZE, 0);
+    auto packetEnd = queryAppVersion(&buffer[0]);
+
+    ASSERT_THAT(std::vector<uint8_t>(&buffer[0], packetEnd),
+        ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'g', 'V', 0, 0xab, 0xee));
+}
+
+TEST_F(ProtocolTest, it_parses_an_app_version_response) {
+    std::vector<uint8_t> buffer = { 'a', 'b', 'C', 'd' };
+
+    ASSERT_EQ("abCd", parseAppVersion(&buffer[0], 4));
 }
 
 TEST_F(ProtocolTest, it_formats_a_configuration_query) {

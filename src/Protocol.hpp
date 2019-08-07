@@ -33,13 +33,21 @@ namespace imu_aceinna_openimu {
         uint8_t* formatPacket(uint8_t* buffer, char const* code,
                               uint8_t const* payload, int size);
 
-        /** Writes a device info query to the given buffer
+        /** Writes a device info query (pG) to the given buffer
          */
-        uint8_t* queryDeviceInfo(uint8_t* buffer);
+        uint8_t* queryDeviceID(uint8_t* buffer);
 
         /** Parse a device info response
          */
-        std::string parseDeviceInfo(uint8_t const* payload, int size);
+        std::string parseDeviceID(uint8_t const* payload, int size);
+
+        /** Writes a app version query (gV) to the given buffer
+         */
+        uint8_t* queryAppVersion(uint8_t* buffer);
+
+        /** Parse a device info response
+         */
+        std::string parseAppVersion(uint8_t const* payload, int size);
 
         /** Query the configuration parameters (gA) */
         uint8_t* queryConfiguration(uint8_t* buffer);
