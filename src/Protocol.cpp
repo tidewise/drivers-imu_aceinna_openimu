@@ -237,6 +237,14 @@ uint8_t* protocol::queryConfigurationSave(uint8_t* buffer) {
     return formatPacket(buffer, "sC", nullptr, 0);
 }
 
+uint8_t* protocol::queryRestoreDefaultConfiguration(uint8_t* buffer) {
+    return formatPacket(buffer, "rD", nullptr, 0);
+}
+
+uint8_t* protocol::queryReset(uint8_t* buffer) {
+    return formatPacket(buffer, "rS", nullptr, 0);
+}
+
 uint8_t* protocol::queryJumpToBootloader(uint8_t* buffer) {
     return formatPacket(buffer, "JI", nullptr, 0);
 }

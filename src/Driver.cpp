@@ -104,6 +104,18 @@ string to_string(string value) {
     return value;
 }
 
+void Driver::queryReset() {
+    auto packetEnd = protocol::queryReset(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+}
+
+void Driver::queryRestoreDefaultConfiguration() {
+    auto packetEnd = protocol::queryRestoreDefaultConfiguration(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    std::cout << "response size: " << packetSize << std::endl;
+}
+
 template <typename T>
 void Driver::writeConfiguration(int index, T value, bool validate)
 {

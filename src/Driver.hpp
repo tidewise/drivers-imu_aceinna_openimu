@@ -53,6 +53,12 @@ namespace imu_aceinna_openimu {
          */
         void writeBaudrate(int rate);
 
+        /** Reset the unit */
+        void queryReset();
+
+        /** Restore the default configuration and save it to flash */
+        void queryRestoreDefaultConfiguration();
+
         void writeConfiguration(Configuration const& configuration, bool validate = false);
 
         template<typename T>

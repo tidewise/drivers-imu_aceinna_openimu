@@ -167,6 +167,28 @@ Result may be 0 (OK), -1 (INVALID_PARAM) or -2 (INVALID_VALUE)
 
 - No payload
 
+## rD - Restore defaults
+
+Loads defaults to memory and save them to flash
+
+### Query
+
+- No payload
+
+### Reply
+
+- No payload
+
+## rS - Reset
+
+### Query
+
+- No payload
+
+### Reply
+
+This message does not send any reply
+
 ## z1 - Scaled 9-axis IMU packet
 
 ### Query

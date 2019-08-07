@@ -89,6 +89,14 @@ namespace imu_aceinna_openimu {
         template<typename T>
         T parseConfigurationParameter(uint8_t* buffer, int bufferSize, int expectedIndex);
 
+        /** Restore default configuration and save it to flash
+         */
+        uint8_t* queryRestoreDefaultConfiguration(uint8_t* buffer);
+
+        /** Reset the unit
+         */
+        uint8_t* queryReset(uint8_t* buffer);
+
         /** Save current configuration to flash
          */
         uint8_t* queryConfigurationSave(uint8_t* buffer);

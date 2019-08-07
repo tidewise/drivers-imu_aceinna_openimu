@@ -201,6 +201,10 @@ int main(int argc, char** argv)
             << "ID: " << info.device_id << "\n"
             << "App: " << info.app_version << std::endl;
     }
+    else if (cmd == "reset") {
+        driver.openURI(uri);
+        driver.queryReset();
+    }
     else {
         cerr << "unexpected command " << cmd << endl;
         return usage();
