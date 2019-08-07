@@ -213,3 +213,27 @@ uint8_t* protocol::writeConfiguration<std::string>(uint8_t* buffer, int index, s
 uint8_t* protocol::queryConfigurationSave(uint8_t* buffer) {
     return formatPacket(buffer, "sC", nullptr, 0);
 }
+
+uint8_t* protocol::queryJumpToBootloader(uint8_t* buffer) {
+    return formatPacket(buffer, "JI", nullptr, 0);
+}
+
+uint8_t* protocol::queryJumpToApp(uint8_t* buffer) {
+    return formatPacket(buffer, "JA", nullptr, 0);
+}
+
+uint8_t* protocol::queryAppBlockWrite(uint8_t* buffer, uint32_t address,
+                                      uint8_t const* blockData, int blockSize) {
+    if (blockSize > MAX_APP_BLOCK_SIZE) {
+        throw std::invalid_argument("max app block is 240 bytes");
+    }
+
+    uint8_t payload[256];
+    payload[0] = (address >> 24) & 0xFF;
+    payload[1] = (address >> 16) & 0xFF;
+    payload[2] = (address >> 8) & 0xFF;
+    payload[3] = (address >> 0) & 0xFF;
+    payload[4] = blockSize;
+    memcpy(&payload[5], blockData, blockSize);
+    return formatPacket(buffer, "WA", payload, blockSize + 5);
+}

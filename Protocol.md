@@ -343,3 +343,48 @@ different payload.
 | 40 | float | Magnetic field Y (Gauss) |
 | 44 | float | Magnetic field Z (Gauss) |
 | 48 | float | Degrees (C) |
+
+## JI - Jump to Bootloader
+
+Note: communication will switch to 57600 baud *after* JI is acknowledged
+
+**IMPORTANT**: you cannot switch back to app mode after a jump to bootloader.
+A new firmware **MUST** be written first.
+
+### Query
+
+- No payload
+
+### Response
+
+- No payload
+
+## JA - Jump to App
+
+### Query
+
+- No payload
+
+## Response
+
+**This packet has no response**
+
+## WA - Write App Block
+
+**NOTE**: the unit usually takes a longer time to respond to the first WA call.
+Use a longer timeout.
+
+### Query
+
+| Offset | Type   | Description |
+|--------|--------|--------------------------|
+| 0 | uint8 | Target address[3] MSB |
+| 1 | uint8 | Target address[2] |
+| 2 | uint8 | Target address[1] |
+| 3 | uint8 | Target address[0] LSB |
+| 4 | uint8 | Length of data block in bytes |
+| 5 | N bytes | Data - Max 240 bytes |
+
+### Response
+
+- No payload

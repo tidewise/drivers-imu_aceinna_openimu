@@ -1,9 +1,17 @@
 #include <imu_aceinna_openimu/Driver.hpp>
 #include <imu_aceinna_openimu/Protocol.hpp>
+#include <iostream>
 
 using namespace std;
 using namespace imu_aceinna_openimu;
 
+struct NullStream : std::ostream {
+};
+static NullStream null_progress;
+
+ostream& Driver::nullStream() {
+    return null_progress;
+}
 
 Driver::Driver()
     : iodrivers_base::Driver(BUFFER_SIZE)
@@ -55,14 +63,27 @@ DeviceInfo Driver::readDeviceInfo()
         mReadBuffer + protocol::PAYLOAD_OFFSET,
         packetSize - protocol::PACKET_OVERHEAD);
 
+    if (deviceID.find("OpenIMU_Bootloader") == 0) {
+        return DeviceInfo { true, deviceID, "" };
+    }
+
     packetEnd = protocol::queryAppVersion(mWriteBuffer);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
     packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
     string appVersion = protocol::parseAppVersion(
         mReadBuffer + protocol::PAYLOAD_OFFSET,
         packetSize - protocol::PACKET_OVERHEAD);
+    return DeviceInfo { false, deviceID, appVersion };
+}
 
-    return DeviceInfo { deviceID, appVersion };
+DeviceInfo Driver::getDeviceInfo() const
+{
+    return mDeviceInfo;
+}
+
+bool Driver::isBootloaderMode() const
+{
+    return mDeviceInfo.bootloader_mode;
 }
 
 Configuration Driver::readConfiguration()
@@ -139,12 +160,39 @@ void Driver::setBaudrate(int rate)
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
 }
 
-DeviceInfo Driver::getDeviceInfo() const
-{
-    return mDeviceInfo;
-}
-
 int Driver::extractPacket(uint8_t const* buffer, size_t bufferSize) const
 {
     return protocol::extractPacket(buffer, bufferSize);
+}
+
+void Driver::toBootloader()
+{
+    auto packetEnd = protocol::queryJumpToBootloader(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    close();
+}
+
+void Driver::toApp()
+{
+    auto packetEnd = protocol::queryJumpToApp(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    close();
+}
+
+void Driver::writeFirmware(std::vector<uint8_t> const& bin, std::ostream& progress)
+{
+    unsigned int i = 0;
+    while (i < bin.size()) {
+        progress << "\r" << i << "/" << bin.size() << std::flush;
+        int remaining = bin.size() - i;
+        int blockSize = min(remaining, protocol::MAX_APP_BLOCK_SIZE);
+
+        auto packetEnd = protocol::queryAppBlockWrite(
+            mWriteBuffer, i, &bin[i], blockSize);
+        writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+        readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2,
+                         base::Time::fromSeconds(10));
+        i += blockSize;
+    }
 }

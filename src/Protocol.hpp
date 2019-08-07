@@ -17,6 +17,8 @@ namespace imu_aceinna_openimu {
         static const int MIN_PACKET_SIZE = PACKET_OVERHEAD;
         // Maximum number of bytes per packet
         static const int MAX_PACKET_SIZE = MIN_PACKET_SIZE + 256;
+        // Biggest block that can be written when flashing the firmware
+        static const int MAX_APP_BLOCK_SIZE = 240;
 
         /** Implements iodrivers_base's extractPacket protocol
          *
@@ -80,6 +82,19 @@ namespace imu_aceinna_openimu {
         /** Save current configuration to flash
          */
         uint8_t* queryConfigurationSave(uint8_t* buffer);
+
+        /** Make the unit switch to bootloader mode (JI)
+         */
+        uint8_t* queryJumpToBootloader(uint8_t* buffer);
+
+        /** Make the unit switch to app mode (JA)
+         */
+        uint8_t* queryJumpToApp(uint8_t* buffer);
+
+        /** Write an app block
+         */
+        uint8_t* queryAppBlockWrite(uint8_t* buffer, uint32_t address,
+                                    uint8_t const* blockData, int blockSize);
     }
 }
 

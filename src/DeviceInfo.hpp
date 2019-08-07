@@ -5,6 +5,7 @@
 
 namespace imu_aceinna_openimu {
     struct DeviceInfo {
+        bool bootloader_mode;
         std::string device_id;
         std::string app_version;
     };

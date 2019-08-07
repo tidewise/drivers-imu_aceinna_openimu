@@ -1,5 +1,6 @@
 #include <iostream>
 #include <imu_aceinna_openimu/Driver.hpp>
+#include <fstream>
 
 using namespace std;
 using namespace imu_aceinna_openimu;
@@ -63,19 +64,22 @@ int main(int argc, char** argv)
 
     if (cmd == "info") {
         driver.openURI(uri);
-        auto conf = driver.readConfiguration();
         auto info = driver.getDeviceInfo();
-
-        cout
-            << "ID: " << info.device_id << "\n"
-            << "App: " << info.app_version << "\n"
-            << "Periodic packet type: " << conf.periodic_packet_type << "\n"
-            << "Periodic packet rate: " << conf.periodic_packet_rate << "\n"
-            << "Angular velocity low-pass filter: " << conf.angular_velocity_low_pass_filter << "\n"
-            << "Acceleration low-pass filter: " << conf.acceleration_low_pass_filter << "\n"
-            << "Orientation: " << conf.orientation << "\n"
-            << flush;
-
+        if (driver.isBootloaderMode()) {
+            cout << "ID: " << info.device_id << std::endl;
+        }
+        else {
+            auto conf = driver.readConfiguration();
+            cout
+                << "ID: " << info.device_id << "\n"
+                << "App: " << info.app_version << "\n"
+                << "Periodic packet type: " << conf.periodic_packet_type << "\n"
+                << "Periodic packet rate: " << conf.periodic_packet_rate << "\n"
+                << "Angular velocity low-pass filter: " << conf.angular_velocity_low_pass_filter << "\n"
+                << "Acceleration low-pass filter: " << conf.acceleration_low_pass_filter << "\n"
+                << "Orientation: " << conf.orientation << "\n"
+                << flush;
+        }
         return 0;
     }
     else if (cmd == "set") {
@@ -145,6 +149,57 @@ int main(int argc, char** argv)
             << "ID: " << info.device_id << "\n"
             << "App: " << info.app_version << std::endl;
         return 0;
+    }
+    else if (cmd == "write-firmware") {
+        if (argc != 4) {
+            cerr << "expected a single argument FILE\n" << std::endl;
+            usage();
+            return 1;
+        }
+
+        std::vector<uint8_t> firmware;
+        string path = argv[3];
+        ifstream file(path, ios::in|ios::binary|ios::ate);
+        if (!file.is_open()) {
+            throw std::runtime_error("cannot open " + path + " for reading");
+        }
+
+        int size = file.tellg();
+        firmware.resize(size);
+        file.seekg(0, ios::beg);
+        file.read(reinterpret_cast<char*>(&firmware[0]), size);
+        file.close();
+
+        driver.openURI(uri);
+        if (!driver.isBootloaderMode()) {
+            driver.toBootloader();
+            if (uri.find("serial://") == 0) {
+                string bootloader_uri = uri.substr(0, uri.rfind(":")) + ":57600";
+                driver.openURI(bootloader_uri);
+                cout << "contacted unit in bootloader mode at "
+                     << bootloader_uri << endl;
+                if (!driver.isBootloaderMode()) {
+                    std::cerr << "failed to switch to bootloader mode" << std::endl;
+                    return 1;
+                }
+            }
+            else {
+                std::cout << "WARN: not accessing the unit through a serial line\n"
+                          << "WARN: reopening the device in bootloader mode might fail"
+                          << std::endl;
+                driver.openURI(uri);
+            }
+        }
+
+        driver.writeFirmware(firmware, std::cout);
+        driver.toApp();
+        sleep(5); // from the python code
+        driver.openURI(uri);
+        cout << "\rfirmware update successful" << endl;
+        auto info = driver.getDeviceInfo();
+        cout
+            << "ID: " << info.device_id << "\n"
+            << "App: " << info.app_version << std::endl;
     }
     else {
         cerr << "unexpected command " << cmd << endl;

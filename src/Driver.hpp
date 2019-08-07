@@ -4,6 +4,7 @@
 #include <iodrivers_base/Driver.hpp>
 #include <imu_aceinna_openimu/DeviceInfo.hpp>
 #include <imu_aceinna_openimu/Configuration.hpp>
+#include <iosfwd>
 
 namespace imu_aceinna_openimu {
     struct ConfigurationWriteFailed : public std::runtime_error {
@@ -37,7 +38,12 @@ namespace imu_aceinna_openimu {
         Driver();
         void openURI(std::string const& uri);
 
+        /** Information about the device */
         DeviceInfo getDeviceInfo() const;
+
+        /** Whether the device is in bootloader mode or in app mode */
+        bool isBootloaderMode() const;
+
         Configuration readConfiguration();
 
         void setBaudrate(int rate);
@@ -51,6 +57,25 @@ namespace imu_aceinna_openimu {
 
         template<typename T>
         T readConfiguration(int index);
+
+        /** Switch to bootloader mode
+         *
+         * You need to reconnect after this. To force the issue, the method
+         * calls close(), which essentially invalidates the driver
+         */
+        void toBootloader();
+
+        /** Switch to app mode
+         *
+         * You need to reconnect after this. To force the issue, the method
+         * calls close(), which essentially invalidates the driver
+         */
+        void toApp();
+        static std::ostream& nullStream();
+
+        /** Write a new app firmware */
+        void writeFirmware(std::vector<uint8_t> const& data,
+                           std::ostream& progress = nullStream());
     };
 }
 

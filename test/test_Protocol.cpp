@@ -222,3 +222,14 @@ TEST_F(ProtocolTest, it_throws_if_the_parameter_is_not_the_expected_one) {
         }
     }, std::invalid_argument);
 }
+
+TEST_F(ProtocolTest, it_formats_a_firmware_block_write_message) {
+    vector<uint8_t> block = { 1, 2, 3, 4 };
+    vector<uint8_t> packet(MAX_PACKET_SIZE, 0);
+
+    auto packetEnd = queryAppBlockWrite(&packet[0], 0x10203040, &block[0], 4);
+
+    ASSERT_THAT(std::vector<uint8_t>(&packet[0], packetEnd),
+        ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'W', 'A', 9,
+                    0x10, 0x20, 0x30, 0x40, 4, 1, 2, 3, 4, 0x6d, 0xad));
+}
