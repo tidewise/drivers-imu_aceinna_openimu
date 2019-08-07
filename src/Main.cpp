@@ -41,8 +41,20 @@ int usage()
         << "  URI        a valid iodrivers_base URI, e.g. serial:///dev/ttyUSB0:115200\n"
         << "\n"
         << "Known commands:\n"
-        << "  info       display information about the connected unit\n"
-        << "  find-rate  find the baud rate on a serial line. Do not specify the rate in the URI\n"
+        << "  info              display information about the connected unit\n"
+        << "  set NAME VALUE    set a configuration parameter. Call without\n"
+        << "                    arguments for a list)\n"
+        << "\n"
+        << "  find-rate         find the baud rate on a serial line. Do not specify\n"
+        << "                    the rate in the URI\n"
+        << "  set-rate RATE     change the baud rate. The new rate will be effective\n"
+        << "                    only after a save-config and a reset\n"
+        << "  save-config       save the current configuration to flash\n"
+        << "\n"
+        << "  to-bootloader     switch to bootloader mode. Communication when in\n"
+        << "                    bootloader mode is always using 57600 bauds\n"
+        << "  to-app            switch to app mode\n"
+        << "  write-firmware P  write a firmware file\n"
         << flush;
 
     return 0;
