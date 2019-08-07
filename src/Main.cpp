@@ -112,6 +112,10 @@ int main(int argc, char** argv)
             driver.writeConfiguration(definition->index, param_value, true);
         }
     }
+    else if (cmd == "save-config") {
+        driver.openURI(uri);
+        driver.saveConfiguration();
+    }
     else if (cmd == "set-rate") {
         if (argc != 4) {
             std::cerr << "set-rate expectes a single RATE argument\n" << std::endl;
