@@ -44,6 +44,7 @@ namespace imu_aceinna_openimu {
         /** Whether the device is in bootloader mode or in app mode */
         bool isBootloaderMode() const;
 
+        /** Read the current device configuration */
         Configuration readConfiguration();
 
         /** Change the UART baud rate
@@ -59,13 +60,30 @@ namespace imu_aceinna_openimu {
         /** Restore the default configuration and save it to flash */
         void queryRestoreDefaultConfiguration();
 
+        /** Write a whole configuration */
         void writeConfiguration(Configuration const& configuration, bool validate = false);
 
+        /** Write a single configuration parameter
+         *
+         * See Protocol.md for the various fields and their possible values.
+         * The type must either be int64_t or std::string. Other values will fail
+         * at link time
+         *
+         * @param validate if true, the method will re-read the configuration parameter
+         *        to ensure it has been properly updated
+         */
         template<typename T>
         void writeConfiguration(int index, T value, bool validate = false);
 
+        /** Save the configuration to flash */
         void saveConfiguration();
 
+        /** Read a single configuration parameter
+         *
+         * See Protocol.md for the various fields and their possible values.
+         * The type must either be int64_t or std::string. Other values will fail
+         * at link time.
+         */
         template<typename T>
         T readConfiguration(int index);
 
@@ -82,6 +100,7 @@ namespace imu_aceinna_openimu {
          * calls close(), which essentially invalidates the driver
          */
         void toApp();
+
         static std::ostream& nullStream();
 
         /** Write a new app firmware */
