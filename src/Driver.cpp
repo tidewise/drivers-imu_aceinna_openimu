@@ -154,7 +154,7 @@ void Driver::saveConfiguration()
     readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
 }
 
-void Driver::setBaudrate(int rate)
+void Driver::writeBaudrate(int rate)
 {
     auto packetEnd = protocol::writeConfiguration<int64_t>(mWriteBuffer, 2, rate);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);

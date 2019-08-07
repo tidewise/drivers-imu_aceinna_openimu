@@ -46,7 +46,12 @@ namespace imu_aceinna_openimu {
 
         Configuration readConfiguration();
 
-        void setBaudrate(int rate);
+        /** Change the UART baud rate
+         *
+         * The change will be effective only if (1) the configuration is saved
+         * to flash and (2) the unit is reset.
+         */
+        void writeBaudrate(int rate);
 
         void writeConfiguration(Configuration const& configuration, bool validate = false);
 

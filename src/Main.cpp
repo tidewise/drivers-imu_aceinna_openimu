@@ -121,7 +121,7 @@ int main(int argc, char** argv)
         int rate = stoll(argv[3]);
         cout << "Changing baud rate to " << rate << std::endl;
         driver.openURI(uri);
-        driver.setBaudrate(stoll(argv[3]));
+        driver.writeBaudrate(stoll(argv[3]));
         driver.saveConfiguration();
         cout << "You need to restart the IMU for the change to take effect" << std::endl;
         return 0;
