@@ -65,7 +65,6 @@ int protocol::extractPacket(uint8_t const* buffer, int bufferSize)
         return packetSize;
     }
     else {
-        std::cout << "CRC: " << hex << expectedCRC << std::endl;
         return -1;
     }
 }
