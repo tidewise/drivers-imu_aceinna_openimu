@@ -11,15 +11,6 @@ using namespace std;
 using namespace imu_aceinna_openimu;
 using endianness::decode;
 
-struct ConfigurationParameter
-{
-    int index;
-    int offset;
-    enum DATA_TYPE { UINT64, INT64, CHAR8 };
-    DATA_TYPE type;
-    char const* name;
-};
-
 ORIENTATION_AXIS decodeOrientationAxis(string axis) {
     int result;
     if (axis[1] == 'X') {
@@ -67,15 +58,6 @@ static std::string encodeOrientationAxis(ORIENTATION_AXIS axis) {
             throw std::invalid_argument("encodeOrientationAxis: invalid axis");
     }
 }
-
-static const ConfigurationParameter CONFIGURATION[] = {
-    { 2, 16, ConfigurationParameter::UINT64, "Baud Rate" },
-    { 3, 24, ConfigurationParameter::CHAR8, "Periodic Packet Type" },
-    { 3, 32, ConfigurationParameter::INT64, "Periodic Packet Rate" },
-    { 3, 40, ConfigurationParameter::INT64, "Acceleration low-pass filter" },
-    { 3, 48, ConfigurationParameter::INT64, "Angular velocity low-pass filter" },
-    { 3, 56, ConfigurationParameter::CHAR8, "Orientation" }
-};
 
 int protocol::extractPacket(uint8_t const* buffer, int bufferSize)
 {
