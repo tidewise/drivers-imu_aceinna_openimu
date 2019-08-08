@@ -179,24 +179,41 @@ uint8_t* protocol::queryConfiguration(uint8_t* buffer)
 
 Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize)
 {
-    if (bufferSize < 56) {
+    if (bufferSize < 96) {
         throw std::invalid_argument("buffer size for message gA (configuration) "\
-                                    "smaller than 56 bytes");
+                                    "smaller than 96 bytes");
     }
+    uint8_t const* end = buffer + bufferSize;
     Configuration ret;
     ret.periodic_packet_type = string(
         reinterpret_cast<char const*>(buffer + 24),
         reinterpret_cast<char const*>(buffer + 26)
     );
-    decode(buffer + 32, ret.periodic_packet_rate);
-    decode(buffer + 40, ret.acceleration_low_pass_filter);
-    decode(buffer + 48, ret.angular_velocity_low_pass_filter);
+    uint8_t const* cursor = buffer;
+    cursor = decode(buffer + 32, ret.periodic_packet_rate, end);
+    cursor = decode(cursor, ret.acceleration_low_pass_filter, end);
+    cursor = decode(cursor, ret.angular_velocity_low_pass_filter, end);
 
     string orientation(
         reinterpret_cast<char const*>(buffer + 56),
-        reinterpret_cast<char const*>(buffer + std::min(64, bufferSize))
+        reinterpret_cast<char const*>(buffer + 62)
     );
     ret.orientation = decodeOrientationString(orientation);
+
+    // GPS parameters, standard INS app
+    int64_t protocol, baudrate;
+    cursor = decode(buffer + 64, baudrate, end);
+    cursor = decode(cursor, protocol, end);
+    if (protocol < -1 || protocol > GPS_LAST_KNOWN_PROTOCOL) {
+        throw std::invalid_argument("got invalid GPS protocol");
+    }
+    ret.gps_protocol = static_cast<GPSProtocol>(protocol);
+    ret.gps_baud_rate = baudrate;
+
+    // Read but ignore
+    float magneticCalibration[4];
+    for (int i = 0; i < 4; ++i)
+        cursor = decode(cursor, magneticCalibration[i], end);
     return ret;
 }
 

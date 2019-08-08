@@ -13,6 +13,16 @@ namespace imu_aceinna_openimu {
         ORIENTATION_AXIS_MINUS_Z
     };
 
+    enum GPSProtocol {
+        GPS_AUTO = -1,
+        GPS_UBLOX = 0,
+        GPS_NOVATEL_BINARY = 1,
+        GPS_NOVATEL_ASCII = 2,
+        GPS_NMEA0183 = 3,
+        GPS_SIRF_BINARY = 4,
+        GPS_LAST_KNOWN_PROTOCOL = GPS_SIRF_BINARY
+    };
+
     struct Configuration {
         struct Orientation {
             ORIENTATION_AXIS forward = ORIENTATION_AXIS_PLUS_X;
@@ -29,6 +39,9 @@ namespace imu_aceinna_openimu {
         int angular_velocity_low_pass_filter = 25;
 
         Orientation orientation;
+
+        GPSProtocol gps_protocol = GPS_UBLOX;
+        int32_t gps_baud_rate = 115200;
     };
 
     inline std::string to_string(std::string const& value) { return value; }

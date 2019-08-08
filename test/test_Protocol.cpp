@@ -92,10 +92,14 @@ TEST_F(ProtocolTest, it_parses_a_configuration_response) {
         4, 0, 0, 0, 0, 0, 0, 0, // Periodic Packet Rate
         5, 0, 0, 0, 0, 0, 0, 0, // Accel low-pass filter
         6, 0, 0, 0, 0, 0, 0, 0, // Rate low-pass filter
-        '+', 'X', '-', 'Y', '+', 'Z', ' ', ' ' // Orientation
+        '+', 'X', '-', 'Y', '+', 'Z', ' ', ' ', // Orientation
+        10, 0, 0, 0, 0, 0, 0, 0, // GPS Baudrate
+        1, 0, 0, 0, 0, 0, 0, 0, // GPS Protocol
+        1, 0, 0, 0, 2, 0, 0, 0, // Hard Iron
+        3, 0, 0, 0, 4, 0, 0, 0, // Soft Iron
     };
 
-    auto conf = parseConfiguration(&buffer[0], 64);
+    auto conf = parseConfiguration(&buffer[0], buffer.size());
     ASSERT_EQ("gA", conf.periodic_packet_type);
     ASSERT_EQ(4, conf.periodic_packet_rate);
     ASSERT_EQ(5, conf.acceleration_low_pass_filter);
@@ -103,6 +107,8 @@ TEST_F(ProtocolTest, it_parses_a_configuration_response) {
     ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_PLUS_X, conf.orientation.forward);
     ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_MINUS_Y, conf.orientation.right);
     ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_PLUS_Z, conf.orientation.down);
+    ASSERT_EQ(10, conf.gps_baud_rate);
+    ASSERT_EQ(1, conf.gps_protocol);
 }
 
 TEST_F(ProtocolTest, it_raises_if_configuration_buffer_is_smaller_than_the_expected_struct) {

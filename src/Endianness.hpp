@@ -56,6 +56,16 @@ namespace imu_aceinna_openimu {
         }
 
         template<typename T>
+        uint8_t const* decode(uint8_t const* buffer, T& value, uint8_t const* end)
+        {
+            if (buffer + sizeof(T) > end)
+            {
+                throw std::invalid_argument("buffer too small");
+            }
+            return decode<T>(buffer, value);
+        }
+
+        template<typename T>
         uint8_t* encode(uint8_t* buffer, T const& value,
                         typename std::enable_if<sizeof(T) == 8>::type* enabler = nullptr)
         {

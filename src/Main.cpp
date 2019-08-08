@@ -37,6 +37,18 @@ void displayParameters(ostream& stream) {
     }
 }
 
+string gpsProtocolToString(GPSProtocol protocol) {
+    switch(protocol) {
+        case GPS_AUTO: return "auto";
+        case GPS_UBLOX: return "uBlox";
+        case GPS_NOVATEL_BINARY: return "Novatel Binary";
+        case GPS_NOVATEL_ASCII: return "Novatel ASCII";
+        case GPS_NMEA0183: return "NMEA 0183";
+        case GPS_SIRF_BINARY: return "SIRF Binary";
+        default: return "unknown";
+    }
+}
+
 int usage()
 {
     cerr
@@ -93,6 +105,8 @@ int main(int argc, char** argv)
                 << "Angular velocity low-pass filter: " << conf.angular_velocity_low_pass_filter << "\n"
                 << "Acceleration low-pass filter: " << conf.acceleration_low_pass_filter << "\n"
                 << "Orientation: " << to_string(conf.orientation) << "\n"
+                << "GPS Protocol: " << gpsProtocolToString(conf.gps_protocol) << "\n"
+                << "GPS Baud Rate: " << conf.gps_baud_rate << "\n"
                 << flush;
         }
         return 0;
