@@ -175,9 +175,14 @@ Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize
         reinterpret_cast<char const*>(buffer + 26)
     );
     uint8_t const* cursor = buffer;
-    cursor = decode(buffer + 32, ret.periodic_packet_rate, end);
-    cursor = decode(cursor, ret.acceleration_low_pass_filter, end);
-    cursor = decode(cursor, ret.angular_velocity_low_pass_filter, end);
+
+    int64_t values[3];
+    cursor = decode<int64_t>(buffer + 32, values[0], end);
+    cursor = decode<int64_t>(cursor, values[1], end);
+    cursor = decode<int64_t>(cursor, values[2], end);
+    ret.periodic_packet_rate = values[0];
+    ret.acceleration_low_pass_filter = values[1];
+    ret.angular_velocity_low_pass_filter = values[2];
 
     string orientation(
         reinterpret_cast<char const*>(buffer + 56),
