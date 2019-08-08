@@ -160,6 +160,7 @@ int main(int argc, char** argv)
         if (argc == 3) {
             cout << "Valid parameters: ";
             displayParameters(cout);
+            cout << std::endl;
             return 0;
         }
         else if (argc != 5) {
