@@ -37,7 +37,16 @@ namespace imu_aceinna_openimu {
 
     public:
         Driver();
-        void openURI(std::string const& uri);
+
+        struct UnsupportedDevice : public std::runtime_error {
+            using std::runtime_error::runtime_error;
+        };
+
+        /**
+         * @param validateDevice validates that the openIMU device firmware is
+         *                       compatible with this driver. See README.md.
+         */
+        void openURI(std::string const& uri, bool validateDevice = true);
 
         /** Information about the device */
         DeviceInfo getDeviceInfo() const;

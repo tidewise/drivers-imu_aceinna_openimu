@@ -2,8 +2,14 @@
 
 Driver for the [AceINNA OpenIMU](https://www.aceinna.com/openimu)
 
-This driver implements the OpenIMU protocol as provided by the default apps
-AceINNA distributes (the python-openimu package)
+This driver implements the OpenIMU protocol as provided by the default apps.
+However, it uses some protocol extensions that have been implemented on top
+of the AceINNA-distributed INS app. The whole protocol is documented in
+[Protocol.md](Protocol.md).
+
+The driver will by default refuse to open a device that is not running this
+firmware. Copies of the firmware are available in firmwares/ as well as on
+GitHub (https://github.com/tidewise/firmware-openimu)
 
 While it is part of the Rock project, this driver is pure CMake and C++ code. It can
 be reused on non-Rock environments provided that you also install its dependencies.

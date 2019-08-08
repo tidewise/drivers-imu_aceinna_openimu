@@ -48,10 +48,20 @@ int Driver::readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* com
     return 0; // never reached
 }
 
-void Driver::openURI(std::string const& uri)
+void Driver::openURI(std::string const& uri, bool validateDevice)
 {
     iodrivers_base::Driver::openURI(uri);
     mDeviceInfo = readDeviceInfo();
+    if (validateDevice && !mDeviceInfo.bootloader_mode) {
+        auto app_version = mDeviceInfo.app_version;
+        auto ins = app_version.substr(0, 3);
+        auto tw = app_version.substr(app_version.length() - 2, 2);
+        if (ins != "INS" || tw != "TW") {
+            close();
+            throw UnsupportedDevice("this driver requires the TideWise version "\
+                                    "of the INS app, got: " + app_version);
+        }
+    }
 }
 
 DeviceInfo Driver::readDeviceInfo()

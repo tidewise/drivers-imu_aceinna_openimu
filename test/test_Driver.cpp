@@ -22,7 +22,7 @@ struct DriverTest : public ::testing::Test, iodrivers_base::Fixture<Driver> {
             vector<uint8_t>{ 0x55, 0x55, 'p', 'G', 4, 'a', 'b', 'c', 'd', 0x1f, 0x72 });
         EXPECT_REPLY(
             vector<uint8_t>{ 0x55, 0x55, 'g', 'V', 0, 0xab, 0xee },
-            vector<uint8_t>{ 0x55, 0x55, 'g', 'V', 4, 'e', 'f', 'g', 'h', 0x75, 0x10 });
+            vector<uint8_t>{ 0x55, 0x55, 'g', 'V', 5, 'I', 'N', 'S', 'T', 'W', 0x39, 0x0f });
         driver.openURI("test://");
     }
 };
@@ -34,12 +34,12 @@ TEST_F(DriverTest, it_queries_the_device_description_on_open) {
         vector<uint8_t>{ 0x55, 0x55, 'p', 'G', 4, 'a', 'b', 'c', 'd', 0x1f, 0x72 });
     EXPECT_REPLY(
         vector<uint8_t>{ 0x55, 0x55, 'g', 'V', 0, 0xab, 0xee },
-        vector<uint8_t>{ 0x55, 0x55, 'g', 'V', 4, 'e', 'f', 'g', 'h', 0x75, 0x10 });
+        vector<uint8_t>{ 0x55, 0x55, 'g', 'V', 5, 'I', 'N', 'S', 'T', 'W', 0x39, 0x0f });
     driver.openURI("test://");
 
     auto info = driver.getDeviceInfo();
     ASSERT_EQ("abcd", info.device_id);
-    ASSERT_EQ("efgh", info.app_version);
+    ASSERT_EQ("INSTW", info.app_version);
 }
 
 TEST_F(DriverTest, it_raises_if_the_parameter_write_result_is_not_a_4_byte_value) {
