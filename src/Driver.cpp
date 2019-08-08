@@ -191,6 +191,12 @@ void Driver::writeBaudrate(int rate)
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
 }
 
+void Driver::writePeriodicPacketConfiguration(string packet, int rate)
+{
+    writeConfiguration<string>(3, packet);
+    writeConfiguration<int64_t>(4, rate);
+}
+
 void Driver::writeUsedSensors(bool magnetometers, bool gps, bool gps_course_as_heading) {
     int64_t field = 0;
     if (magnetometers) field |= 1;
@@ -234,4 +240,14 @@ void Driver::writeFirmware(std::vector<uint8_t> const& bin, std::ostream& progre
                          base::Time::fromSeconds(10));
         i += blockSize;
     }
+}
+
+EKFWithCovariance Driver::pollEKFWithCovariance()
+{
+    uint8_t code[2] = { 'e', '3' };
+    size_t packetSize =
+        readPacketsUntil(mReadBuffer, BUFFER_SIZE, code);
+    return protocol::parseEKFWithCovariance(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD);
 }

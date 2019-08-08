@@ -1,8 +1,11 @@
 #include <imu_aceinna_openimu/Protocol.hpp>
 #include <imu_aceinna_openimu/Endianness.hpp>
+#include <imu_aceinna_openimu/EKFWithCovariance.hpp>
 #include <cstring>
 #include <stdexcept>
 #include <iostream>
+#include <base/samples/RigidBodyState.hpp>
+#include <base/samples/RigidBodyAcceleration.hpp>
 
 using namespace std;
 using namespace imu_aceinna_openimu;
@@ -361,3 +364,80 @@ uint8_t* protocol::queryAppBlockWrite(uint8_t* buffer, uint32_t address,
     memcpy(&payload[5], blockData, blockSize);
     return formatPacket(buffer, "WA", payload, blockSize + 5);
 }
+
+EKFWithCovariance protocol::parseEKFWithCovariance(uint8_t const* buffer, int bufferSize) {
+    uint8_t const* end = buffer + bufferSize;
+
+    base::samples::RigidBodyState rbs;
+    base::samples::RigidBodyAcceleration rba;
+
+    uint8_t const* cursor = buffer;
+    uint32_t time_gps_itow;
+    cursor = endianness::decode<uint32_t>(buffer, time_gps_itow, end);
+    rbs.time = rba.time = base::Time::fromMilliseconds(time_gps_itow);
+
+    float values[24];
+    for (int i = 0; i < 24; ++i) {
+        cursor = endianness::decode<float>(cursor, values[i], end);
+    }
+    double lat_lon_alt[3];
+    for (int i = 0; i < 3; ++i) {
+        cursor = endianness::decode<double>(cursor, lat_lon_alt[i], end);
+    }
+    float pos_covariance[3];
+    for (int i = 0; i < 3; ++i) {
+        cursor = endianness::decode<float>(cursor, pos_covariance[i], end);
+    }
+    uint8_t status_byte = *cursor++;
+
+    if (cursor != end) {
+        throw std::invalid_argument(
+            "too many bytes in buffer: got " + to_string(bufferSize) +
+            ", expected " + to_string(cursor - buffer));
+    }
+
+    static const double deg2rad = M_PI / 180.0;
+    static const double deg2rad_square = deg2rad * deg2rad;
+
+    rbs.orientation =
+        Eigen::AngleAxisd(values[2] * deg2rad, Eigen::Vector3d::UnitZ()) *
+        Eigen::AngleAxisd(values[1] * deg2rad, Eigen::Vector3d::UnitY()) *
+        Eigen::AngleAxisd(values[0] * deg2rad, Eigen::Vector3d::UnitX());
+    rbs.cov_orientation = Eigen::DiagonalMatrix<double, 3>(
+        values[3] * deg2rad_square,
+        values[4] * deg2rad_square,
+        values[5] * deg2rad_square
+    );
+
+    FilterState state;
+    state.mode = static_cast<FilterMode>(status_byte & 0x7);
+    state.status = status_byte >> 3;
+
+    rba.acceleration = Eigen::Vector3d(values[6], values[7], values[8]);
+    rba.cov_acceleration = Eigen::DiagonalMatrix<double, 3>(
+        values[9], values[10], values[11]);
+
+    rbs.angular_velocity = Eigen::Vector3d(
+        values[12], values[13], values[14]) * deg2rad;
+    rbs.cov_angular_velocity = Eigen::DiagonalMatrix<double, 3>(
+        values[15], values[16], values[17]) * deg2rad_square;
+
+    EKFWithCovariance result;
+    if (state.mode == OPMODE_INS) {
+        rbs.velocity = Eigen::Vector3d(
+            values[18], values[19], values[20]);
+        rbs.cov_velocity = Eigen::DiagonalMatrix<double, 3>(
+            values[21], values[22], values[23]);
+
+        rbs.cov_position = Eigen::DiagonalMatrix<double, 3>(
+            pos_covariance[0], pos_covariance[1], pos_covariance[2]);
+        result.latitude = lat_lon_alt[0];
+        result.longitude = lat_lon_alt[1];
+    }
+
+    result.rbs = rbs;
+    result.rba = rba;
+    result.filter_state = state;
+    return result;
+}
+

@@ -2,6 +2,7 @@
 #include <imu_aceinna_openimu/Driver.hpp>
 #include <imu_aceinna_openimu/Protocol.hpp>
 #include <fstream>
+#include <iomanip>
 
 using namespace std;
 using namespace imu_aceinna_openimu;
@@ -188,6 +189,28 @@ int main(int argc, char** argv)
         }
         else {
             driver.writeConfiguration(definition->index, param_value, true);
+        }
+    }
+    else if (cmd == "poll") {
+        int poll_period_usec = 100000;
+        if (argc == 4) {
+            poll_period_usec = atof(argv[3]) * 1000000;
+        }
+
+        driver.openURI(uri);
+        driver.writePeriodicPacketConfiguration("e3", 10);
+        while(true) {
+            auto state = driver.pollEKFWithCovariance();
+            std::cout << state.rbs.time
+                      << " " << state.filter_state.toString()
+                      << fixed
+                      << " " << setprecision(1) << base::getRoll(state.rbs.orientation) * 180 / M_PI << " "
+                      << " " << setprecision(1) << base::getPitch(state.rbs.orientation) * 180 / M_PI << " "
+                      << " " << setprecision(1) << base::getYaw(state.rbs.orientation) * 180 / M_PI
+                      << std::endl;
+
+
+            usleep(poll_period_usec);
         }
     }
     else if (cmd == "save-config") {

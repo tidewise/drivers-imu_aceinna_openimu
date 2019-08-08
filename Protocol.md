@@ -237,7 +237,14 @@ Loads defaults to memory and save them to flash
 
 ### Reply
 
-This message does not send any reply
+- This message does not send any reply
+
+# Data packets
+
+Data packets are accessed in two ways. The first way is to set the periodic packet
+type and periodic packet rate, and listen for the generated packets. The second way
+is to use the 'mg' packet.
+
 
 ## z1 - Scaled 9-axis IMU packet
 
@@ -395,6 +402,57 @@ This message does not send any reply
 | 120 | uint8 | Operating mode |
 | 121 | uint8 | linAccSw |
 | 122 | uint8 | turnSw |
+
+## e3 - INS Output Message with Covariances
+
+### Query
+
+- No payload
+
+### Reply
+
+| Offset | Type   | Description |
+|--------|--------|--------------------------|
+| 0 | uint32 | GPS time of week (ms) |
+| 4 | float | Roll (deg) |
+| 8 | float | Pitch (deg) |
+| 12 | float | Yaw (deg) |
+| 16 | float | Roll Covariance (deg^2) |
+| 20 | float | Pitch Covariance (deg^2) |
+| 24 | float | Yaw Covariance (deg^2) |
+| 28 | float | Acceleration along X (g) |
+| 32 | float | Acceleration along Y (g) |
+| 36 | float | Acceleration along Z (g) |
+| 40 | float | Acceleration covarianceX (g^2) |
+| 44 | float | Acceleration covarianceY (g^2) |
+| 48 | float | Acceleration covarianceZ (g^2) |
+| 52 | float | Angular velocity around X (deg/s) |
+| 56 | float | Angular velocity around Y (deg/s) |
+| 60 | float | Angular velocity around Z (deg/s) |
+| 64 | float | Angular velocity covariance X ((deg/s)^2) |
+| 68 | float | Angular velocity covariance Y ((deg/s)^2) |
+| 72 | float | Angular velocity covariance Z ((deg/s)^2) |
+| 76 | float | Velocity North (m/s) |
+| 80 | float | Velocity East (m/s) |
+| 84 | float | Velocity Down (m/s) |
+| 88 | float | Velocity North covariance (Gauss^2) |
+| 92 | float | Velocity Est covariance (Gauss^2) |
+| 96 | float | Velocity Down covariance (Gauss^2) |
+| 100 | double | Latitude (deg) |
+| 108 | double | Longitude (deg) |
+| 116 | double | Altitude (m) |
+| 124 | float | Position covariance N (m^2) |
+| 128 | float | Position covariance E (m^2) |
+| 132 | float | Position covariance D (m^2) |
+| 136 | uint8 | Status byte |
+
+Status byte:
+
+| Length (bit) | Description |
+|--------------|-------------|
+| 3 | Algorithm state (see beginning of section) |
+| 1 | Still switch |
+| 1 | Turn switch |
 
 ## s1 - IMU Scaled Sensors
 

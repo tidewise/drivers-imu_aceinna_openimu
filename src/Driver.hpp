@@ -4,6 +4,7 @@
 #include <iodrivers_base/Driver.hpp>
 #include <imu_aceinna_openimu/DeviceInfo.hpp>
 #include <imu_aceinna_openimu/Configuration.hpp>
+#include <imu_aceinna_openimu/EKFWithCovariance.hpp>
 #include <iosfwd>
 
 namespace imu_aceinna_openimu {
@@ -75,6 +76,9 @@ namespace imu_aceinna_openimu {
         template<typename T>
         void writeConfiguration(int index, T value, bool validate = false);
 
+        /** Configure the periodic packet */
+        void writePeriodicPacketConfiguration(std::string packet, int rate);
+
         /** Configure which sensors can be used by the algorithm */
         void writeUsedSensors(bool magnetometers, bool gps, bool gps_course_as_heading);
 
@@ -105,6 +109,8 @@ namespace imu_aceinna_openimu {
         void toApp();
 
         static std::ostream& nullStream();
+
+        EKFWithCovariance pollEKFWithCovariance();
 
         /** Write a new app firmware */
         void writeFirmware(std::vector<uint8_t> const& data,

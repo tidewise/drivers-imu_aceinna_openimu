@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <imu_aceinna_openimu/Configuration.hpp>
+#include <imu_aceinna_openimu/EKFWithCovariance.hpp>
 
 namespace imu_aceinna_openimu {
     namespace protocol {
@@ -121,6 +122,10 @@ namespace imu_aceinna_openimu {
          */
         uint8_t* queryAppBlockWrite(uint8_t* buffer, uint32_t address,
                                     uint8_t const* blockData, int blockSize);
+
+
+        /** Parse the EKF-with-covariance response (e3) */
+        EKFWithCovariance parseEKFWithCovariance(uint8_t const* buffer, int bufferSize);
     }
 }
 
