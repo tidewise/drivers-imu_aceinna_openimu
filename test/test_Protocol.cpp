@@ -72,6 +72,17 @@ TEST_F(ProtocolTest, it_formats_a_configuration_query) {
         ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'g', 'A', 0, 0x31, 0x0A));
 }
 
+TEST_F(ProtocolTest, it_decodes_an_orientation_string) {
+    auto orientation = decodeOrientationString("+X+Y+Z");
+    ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_PLUS_X, orientation.forward);
+    ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_PLUS_Y, orientation.right);
+    ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_PLUS_Z, orientation.down);
+    orientation = decodeOrientationString("-Z-Y-X");
+    ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_MINUS_Z, orientation.forward);
+    ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_MINUS_Y, orientation.right);
+    ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_MINUS_X, orientation.down);
+}
+
 TEST_F(ProtocolTest, it_parses_a_configuration_response) {
     std::vector<uint8_t> buffer = {
         1, 0, 0, 0, 0, 0, 0, 0, // Data CRC
@@ -81,7 +92,7 @@ TEST_F(ProtocolTest, it_parses_a_configuration_response) {
         4, 0, 0, 0, 0, 0, 0, 0, // Periodic Packet Rate
         5, 0, 0, 0, 0, 0, 0, 0, // Accel low-pass filter
         6, 0, 0, 0, 0, 0, 0, 0, // Rate low-pass filter
-        '+', 'X', '+', 'Y', '+', 'Z', ' ', ' ' // Orientation
+        '+', 'X', '-', 'Y', '+', 'Z', ' ', ' ' // Orientation
     };
 
     auto conf = parseConfiguration(&buffer[0], 64);
@@ -89,29 +100,13 @@ TEST_F(ProtocolTest, it_parses_a_configuration_response) {
     ASSERT_EQ(4, conf.periodic_packet_rate);
     ASSERT_EQ(5, conf.acceleration_low_pass_filter);
     ASSERT_EQ(6, conf.angular_velocity_low_pass_filter);
-    ASSERT_EQ("+X+Y+Z  ", conf.orientation);
+    ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_PLUS_X, conf.orientation.forward);
+    ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_MINUS_Y, conf.orientation.right);
+    ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_PLUS_Z, conf.orientation.down);
 }
 
 TEST_F(ProtocolTest, it_raises_if_configuration_buffer_is_smaller_than_the_expected_struct) {
     ASSERT_THROW(parseConfiguration(nullptr, 55), std::invalid_argument);
-}
-
-TEST_F(ProtocolTest, it_limits_the_orientation_field_to_the_buffer_size_if_smaller_than_64_bytes) {
-    std::vector<uint8_t> buffer;
-    buffer.resize(56, 0);
-    buffer.insert(buffer.end(), { 'a', 'b', 'c', 'd' });
-
-    auto conf = parseConfiguration(&buffer[0], 60);
-    ASSERT_EQ("abcd", conf.orientation);
-}
-
-TEST_F(ProtocolTest, it_limits_the_orientation_field_size_to_8_bytes_regardless_of_the_buffer_size) {
-    std::vector<uint8_t> buffer;
-    buffer.resize(56, 0);
-    buffer.insert(buffer.end(), { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i' });
-
-    auto conf = parseConfiguration(&buffer[0], 65);
-    ASSERT_EQ("abcdefgh", conf.orientation);
 }
 
 TEST_F(ProtocolTest, it_formats_a_configuration_write_for_an_integer_type) {
@@ -154,6 +149,22 @@ TEST_F(ProtocolTest, it_throws_if_the_string_is_longer_than_8_bytes) {
     std::vector<uint8_t> buffer(MAX_PACKET_SIZE, 0);
     string value = "abcdefghijk";
     ASSERT_THROW(writeConfiguration(&buffer[0], 2, value), std::invalid_argument);
+}
+
+TEST_F(ProtocolTest, it_formats_a_configuration_write_for_an_orientation) {
+    std::vector<uint8_t> buffer(MAX_PACKET_SIZE, 0);
+    imu_aceinna_openimu::Configuration::Orientation value = {
+        imu_aceinna_openimu::ORIENTATION_AXIS_PLUS_Y,
+        imu_aceinna_openimu::ORIENTATION_AXIS_MINUS_X,
+        imu_aceinna_openimu::ORIENTATION_AXIS_MINUS_Z
+    };
+    auto packetEnd = writeConfiguration(&buffer[0], 2, value);
+
+    ASSERT_THAT(std::vector<uint8_t>(&buffer[0], packetEnd),
+        ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'u', 'P', 12,
+                    2, 0, 0, 0,
+                    '+', 'Y', '-', 'X', '-', 'Z',0,0,
+                    0x79, 0x6f));
 }
 
 TEST_F(ProtocolTest, it_queries_a_single_parameter) {

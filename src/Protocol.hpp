@@ -27,6 +27,10 @@ namespace imu_aceinna_openimu {
             WRITE_STATUS_UNKNOWN
         };
 
+        /** Decode the +X-Y+Z format from the configuration message into
+         *  Configuration::Orientation */
+        Configuration::Orientation decodeOrientationString(std::string axis);
+
         /** Implements iodrivers_base's extractPacket protocol
          *
          * See iodrivers_base::extractPacket for detailed information
@@ -71,6 +75,10 @@ namespace imu_aceinna_openimu {
          */
         template<typename T>
         uint8_t* writeConfiguration(uint8_t* buffer, int index, T value);
+
+        /** Write an orientation configuration parameters */
+        uint8_t* writeConfiguration(uint8_t* buffer, int index,
+                                    Configuration::Orientation axes);
 
         /** Parse the status from the configuration write reply */
         WriteStatus parseWriteConfigurationStatus(uint8_t* buffer, int bufferSize);

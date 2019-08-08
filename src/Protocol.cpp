@@ -17,6 +17,54 @@ struct ConfigurationParameter
     char const* name;
 };
 
+ORIENTATION_AXIS decodeOrientationAxis(string axis) {
+    int result;
+    if (axis[1] == 'X') {
+        result = ORIENTATION_AXIS_PLUS_X;
+    }
+    else if (axis[1] == 'Y') {
+        result = ORIENTATION_AXIS_PLUS_Y;
+    }
+    else if (axis[1] == 'Z') {
+        result = ORIENTATION_AXIS_PLUS_Z;
+    }
+    else {
+        throw std::invalid_argument("unexpected axis letter in '" + axis +
+                                    "', expected X, Y or Z");
+    }
+
+    if (axis[0] == '-') {
+        result += 1;
+    }
+    else if (axis[0] != '+') {
+        throw std::invalid_argument("unexpected axis direction in '" + axis +
+                                    "', expected + or -");
+    }
+    return static_cast<ORIENTATION_AXIS>(result);
+}
+
+Configuration::Orientation protocol::decodeOrientationString(string orientation)
+{
+    Configuration::Orientation ret;
+    ret.forward = decodeOrientationAxis(orientation.substr(0, 2));
+    ret.right = decodeOrientationAxis(orientation.substr(2, 2));
+    ret.down = decodeOrientationAxis(orientation.substr(4, 2));
+    return ret;
+}
+
+static std::string encodeOrientationAxis(ORIENTATION_AXIS axis) {
+    switch(axis) {
+        case ORIENTATION_AXIS_PLUS_X: return "+X";
+        case ORIENTATION_AXIS_MINUS_X: return "-X";
+        case ORIENTATION_AXIS_PLUS_Y: return "+Y";
+        case ORIENTATION_AXIS_MINUS_Y: return "-Y";
+        case ORIENTATION_AXIS_PLUS_Z: return "+Z";
+        case ORIENTATION_AXIS_MINUS_Z: return "-Z";
+        default:
+            throw std::invalid_argument("encodeOrientationAxis: invalid axis");
+    }
+}
+
 static const ConfigurationParameter CONFIGURATION[] = {
     { 2, 16, ConfigurationParameter::UINT64, "Baud Rate" },
     { 3, 24, ConfigurationParameter::CHAR8, "Periodic Packet Type" },
@@ -143,10 +191,12 @@ Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize
     decode(buffer + 32, ret.periodic_packet_rate);
     decode(buffer + 40, ret.acceleration_low_pass_filter);
     decode(buffer + 48, ret.angular_velocity_low_pass_filter);
-    ret.orientation = string(
+
+    string orientation(
         reinterpret_cast<char const*>(buffer + 56),
         reinterpret_cast<char const*>(buffer + std::min(64, bufferSize))
     );
+    ret.orientation = decodeOrientationString(orientation);
     return ret;
 }
 
@@ -169,6 +219,16 @@ static void validateConfigurationParameter(uint8_t const* buffer, int bufferSize
                                     to_string(expectedIndex) + " but got " +
                                     to_string(actualIndex));
     }
+}
+
+template<> Configuration::Orientation protocol::parseConfigurationParameter<Configuration::Orientation>(
+    uint8_t* buffer, int bufferSize, int expectedIndex) {
+    validateConfigurationParameter(buffer, bufferSize, expectedIndex);
+    string orientation = string(
+        reinterpret_cast<char const*>(buffer + 4),
+        reinterpret_cast<char const*>(buffer + 12)
+    );
+    return decodeOrientationString(orientation);
 }
 
 template<> string protocol::parseConfigurationParameter<string>(
@@ -207,6 +267,15 @@ uint8_t* protocol::writeConfiguration<std::string>(uint8_t* buffer, int index, s
     endianness::encode<uint32_t>(payload, index);
     memcpy(payload + 4, &(value.at(0)), value.length());
     return formatPacket(buffer, "uP", payload, 12);
+}
+
+uint8_t* protocol::writeConfiguration(
+    uint8_t* buffer, int index, Configuration::Orientation orientation)
+{
+    string encoded = encodeOrientationAxis(orientation.forward) +
+                     encodeOrientationAxis(orientation.right) +
+                     encodeOrientationAxis(orientation.down);
+    return writeConfiguration(buffer, index, encoded);
 }
 
 protocol::WriteStatus protocol::parseWriteConfigurationStatus(

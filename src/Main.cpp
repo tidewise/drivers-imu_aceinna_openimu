@@ -1,5 +1,6 @@
 #include <iostream>
 #include <imu_aceinna_openimu/Driver.hpp>
+#include <imu_aceinna_openimu/Protocol.hpp>
 #include <fstream>
 
 using namespace std;
@@ -9,14 +10,16 @@ struct Parameter {
     char const* name;
     int index;
     bool is_integer;
+    bool is_orientation;
 };
 
 static const Parameter PARAMETERS[] = {
-    { "periodic-packet-type", 3, false },
-    { "periodic-packet-rate", 4, true },
-    { "acceleration-filter", 5, true },
-    { "angular-velocity-filter", 6, true },
-    { nullptr, 0, false }
+    { "periodic-packet-type", 3, false, false },
+    { "periodic-packet-rate", 4, true, false },
+    { "acceleration-filter", 5, true, false },
+    { "angular-velocity-filter", 6, true, false },
+    { "orientation", 7, false, true },
+    { nullptr, 0, false, false }
 };
 
 Parameter const* findParameter(string name) {
@@ -89,7 +92,7 @@ int main(int argc, char** argv)
                 << "Periodic packet rate: " << conf.periodic_packet_rate << "\n"
                 << "Angular velocity low-pass filter: " << conf.angular_velocity_low_pass_filter << "\n"
                 << "Acceleration low-pass filter: " << conf.acceleration_low_pass_filter << "\n"
-                << "Orientation: " << conf.orientation << "\n"
+                << "Orientation: " << to_string(conf.orientation) << "\n"
                 << flush;
         }
         return 0;
@@ -118,6 +121,11 @@ int main(int argc, char** argv)
         driver.openURI(uri);
         if (definition->is_integer) {
             int64_t written_value = std::stoll(param_value);
+            driver.writeConfiguration(definition->index, written_value, true);
+        }
+        else if (definition->is_orientation) {
+            Configuration::Orientation written_value =
+                protocol::decodeOrientationString(param_value);
             driver.writeConfiguration(definition->index, written_value, true);
         }
         else {

@@ -80,6 +80,16 @@ different payload.
 | 5 | int64 | Accel low-pass filter (50, 40, 25, 20, 10, 5, 2) |
 | 6 | int64 | Angular velocity low-pass filter (50, 40, 25, 20, 10, 5, 2) |
 | 7 | char[8] | Orientation ("+X+Y+Z") |
+Orientation specifies the forward, right and down axis, encoded with a sign (+ or -)
+and an axis name (X, Y, Z). For instance, "+X-Y-Z" would mean:
+
+- forward axis is positive X
+- right axis is negative Y
+- up axis is positive Z
+
+Note that the unit does not verify that the system is right-handed. Don't
+know what would happen if it was not.
+
 
 ## pG - Get device serial number and factory ID
 
