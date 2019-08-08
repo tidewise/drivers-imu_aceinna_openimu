@@ -80,6 +80,11 @@ different payload.
 | 5 | int64 | Accel low-pass filter (50, 40, 25, 20, 10, 5, 2) |
 | 6 | int64 | Angular velocity low-pass filter (50, 40, 25, 20, 10, 5, 2) |
 | 7 | char[8] | Orientation ("+X+Y+Z") |
+| 8 | int64_t | GPS UART Baudrate |
+| 9 | int64_t | GPS Protocol |
+| 10 | float[2] | Hard iron X and Y |
+| 11 | float[2] | Soft iron ratio and angle |
+
 Orientation specifies the forward, right and down axis, encoded with a sign (+ or -)
 and an axis name (X, Y, Z). For instance, "+X-Y-Z" would mean:
 
@@ -90,6 +95,25 @@ and an axis name (X, Y, Z). For instance, "+X-Y-Z" would mean:
 Note that the unit does not verify that the system is right-handed. Don't
 know what would happen if it was not.
 
+Valid GPS protocols are:
+
+| Protocol | Value |
+|----------|-------|
+| UBlox Binary | 0 |
+| Novatel Binary | 1 |
+| Novatel ASCII | 2 |
+| NMEA0183 | 3 |
+| SIRF Binary | 4 |
+
+## Algorithm States
+
+| Value | Description |
+|-------|-------------|
+| 0 | Stabilize |
+| 1 | Initialize |
+| 2 | High-gain AHRS |
+| 3 | Low-gain AHRS |
+| 4 | INS |
 
 ## pG - Get device serial number and factory ID
 
@@ -133,6 +157,12 @@ know what would happen if it was not.
 | 40 | int64 | Accel low-pass filter (50, 40, 25, 20, 10, 5, 2) |
 | 48 | int64 | Angular velocity low-pass filter (50, 40, 25, 20, 10, 5, 2) |
 | 56 | char[8] | Orientation ("+X+Y+Z") |
+| 64 | int64_t | GPS UART Baudrate |
+| 72 | int64_t | GPS Protocol |
+| 80 | float   | Hard iron X |
+| 84 | float   | Hard iron Y |
+| 88 | float   | Soft iron ratio |
+| 92 | float   | Soft iron angle |
 
 ## gP - Get single parameter
 
