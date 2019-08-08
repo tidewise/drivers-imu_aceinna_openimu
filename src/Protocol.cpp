@@ -352,6 +352,35 @@ uint8_t* protocol::queryAppBlockWrite(uint8_t* buffer, uint32_t address,
     return formatPacket(buffer, "WA", payload, blockSize + 5);
 }
 
+uint8_t* protocol::queryStatus(uint8_t* buffer)
+{
+    return formatPacket(buffer, "gS", nullptr, 0);
+}
+
+Status protocol::parseStatus(uint8_t const* buffer, int size)
+{
+    uint8_t const* end = buffer + size;
+    uint8_t const* cursor = buffer;
+
+    uint32_t time, last_gps, last_gps_velocity;
+    uint8_t temperature_C;
+    cursor = endianness::decode(cursor, time, end);
+    cursor = endianness::decode(cursor, last_gps, end);
+    cursor = endianness::decode(cursor, last_gps_velocity, end);
+    cursor = endianness::decode(cursor, temperature_C, end);
+
+    if (cursor != end) {
+        throw std::invalid_argument("received status structure bigger than expected");
+    }
+
+    Status ret;
+    ret.time = base::Time::fromMilliseconds(time);
+    ret.last_good_gps = base::Time::fromMilliseconds(last_gps);
+    ret.last_usable_gps_velocity = base::Time::fromMilliseconds(last_gps_velocity);
+    ret.temperature = base::Temperature::fromCelsius(temperature_C);
+    return ret;
+}
+
 EKFWithCovariance protocol::parseEKFWithCovariance(uint8_t const* buffer, int bufferSize) {
     uint8_t const* end = buffer + bufferSize;
 

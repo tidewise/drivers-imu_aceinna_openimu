@@ -100,6 +100,7 @@ int main(int argc, char** argv)
         }
         else {
             auto conf = driver.readConfiguration();
+            auto status = driver.readStatus();
             cout
                 << "ID: " << info.device_id << "\n"
                 << "App: " << info.app_version << "\n"
@@ -110,13 +111,35 @@ int main(int argc, char** argv)
                 << "Orientation: " << to_string(conf.orientation) << "\n"
                 << "GPS Protocol: " << gpsProtocolToString(conf.gps_protocol) << "\n"
                 << "GPS Baud Rate: " << conf.gps_baud_rate << "\n"
+                << "\n"
                 << "Enabled Sensors:\n"
-                << "  Magnetometers:" << conf.use_magnetometers << "\n"
-                << "  GPS:" << conf.use_gps << "\n"
-                << "  GPS Course as Heading:" << conf.use_gps_course_as_heading << "\n"
+                << "  Magnetometers: " << conf.use_magnetometers << "\n"
+                << "  GPS: " << conf.use_gps << "\n"
+                << "  GPS Course as Heading: " << conf.use_gps_course_as_heading << "\n"
+                << "\n"
+                << "Status\n"
+                << "  Time: " << status.time << "\n"
+                << "  Last good GPS received at: " << status.last_good_gps << "\n"
+                << "  Last usable GPS velocity at: " << status.last_usable_gps_velocity << "\n"
+                << "  Temperature: " << status.temperature.getCelsius() << " C\n"
                 << flush;
         }
         return 0;
+    }
+    else if (cmd == "poll-status") {
+        int poll_period_usec = 100000;
+        if (argc == 4) {
+            poll_period_usec = atof(argv[3]) * 1000000;
+        }
+
+        driver.openURI(uri);
+        while(true) {
+            auto status = driver.readStatus();
+            cout << status.time << " " << status.last_good_gps << " "
+                 << status.last_usable_gps_velocity << " "
+                 << status.temperature.getCelsius() << " C\n";
+            usleep(poll_period_usec);
+        }
     }
     else if (cmd == "sensor") {
         if (argc == 3) {

@@ -96,6 +96,16 @@ bool Driver::isBootloaderMode() const
     return mDeviceInfo.bootloader_mode;
 }
 
+Status Driver::readStatus()
+{
+    auto packetEnd = protocol::queryStatus(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    return protocol::parseStatus(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD);
+}
+
 Configuration Driver::readConfiguration()
 {
     auto packetEnd = protocol::queryConfiguration(mWriteBuffer);

@@ -5,6 +5,7 @@
 #include <string>
 #include <imu_aceinna_openimu/Configuration.hpp>
 #include <imu_aceinna_openimu/EKFWithCovariance.hpp>
+#include <imu_aceinna_openimu/Status.hpp>
 
 namespace imu_aceinna_openimu {
     namespace protocol {
@@ -123,6 +124,13 @@ namespace imu_aceinna_openimu {
         uint8_t* queryAppBlockWrite(uint8_t* buffer, uint32_t address,
                                     uint8_t const* blockData, int blockSize);
 
+        /** Query the unit status (gS)
+         */
+        uint8_t* queryStatus(uint8_t* buffer);
+
+        /** Parse the unit status response (gS)
+         */
+        Status parseStatus(uint8_t const* buffer, int size);
 
         /** Parse the EKF-with-covariance response (e3) */
         EKFWithCovariance parseEKFWithCovariance(uint8_t const* buffer, int bufferSize);

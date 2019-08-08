@@ -5,6 +5,7 @@
 #include <imu_aceinna_openimu/DeviceInfo.hpp>
 #include <imu_aceinna_openimu/Configuration.hpp>
 #include <imu_aceinna_openimu/EKFWithCovariance.hpp>
+#include <imu_aceinna_openimu/Status.hpp>
 #include <iosfwd>
 
 namespace imu_aceinna_openimu {
@@ -56,6 +57,9 @@ namespace imu_aceinna_openimu {
 
         /** Read the current device configuration */
         Configuration readConfiguration();
+
+        /** Read the current device status */
+        Status readStatus();
 
         /** Change the UART baud rate
          *
