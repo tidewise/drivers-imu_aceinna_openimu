@@ -214,6 +214,13 @@ Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize
     float magneticCalibration[4];
     for (int i = 0; i < 4; ++i)
         cursor = decode(cursor, magneticCalibration[i], end);
+
+    // Flags
+    uint64_t sensorsUsed;
+    cursor = decode(cursor, sensorsUsed, end);
+    ret.use_magnetometers = sensorsUsed & 0x1;
+    ret.use_gps = sensorsUsed & 0x2;
+    ret.use_gps_course_as_heading = sensorsUsed & 0x4;
     return ret;
 }
 

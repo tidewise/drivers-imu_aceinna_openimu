@@ -84,6 +84,7 @@ different payload.
 | 9 | int64_t | GPS Protocol |
 | 10 | float[2] | Hard iron X and Y |
 | 11 | float[2] | Soft iron ratio and angle |
+| 12 | int64_t | Enabled sensors |
 
 Orientation specifies the forward, right and down axis, encoded with a sign (+ or -)
 and an axis name (X, Y, Z). For instance, "+X-Y-Z" would mean:
@@ -104,6 +105,14 @@ Valid GPS protocols are:
 | Novatel ASCII | 2 |
 | NMEA0183 | 3 |
 | SIRF Binary | 4 |
+
+Used sensors configuration:
+
+| Bit | Description |
+|----------|-------|
+| 0 | Magnetometers |
+| 1 | GPS |
+| 2 | GPS Course used as heading |
 
 ## Algorithm States
 
@@ -163,6 +172,7 @@ Valid GPS protocols are:
 | 84 | float   | Hard iron Y |
 | 88 | float   | Soft iron ratio |
 | 92 | float   | Soft iron angle |
+| 96 | int64_t | Enabled sensors |
 
 ## gP - Get single parameter
 

@@ -191,6 +191,14 @@ void Driver::writeBaudrate(int rate)
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
 }
 
+void Driver::writeUsedSensors(bool magnetometers, bool gps, bool gps_course_as_heading) {
+    int64_t field = 0;
+    if (magnetometers) field |= 1;
+    if (gps) field |= 2;
+    if (gps_course_as_heading) field |= 4;
+    writeConfiguration<int64_t>(12, field);
+}
+
 int Driver::extractPacket(uint8_t const* buffer, size_t bufferSize) const
 {
     return protocol::extractPacket(buffer, bufferSize);

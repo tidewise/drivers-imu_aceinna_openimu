@@ -59,6 +59,8 @@ int usage()
         << "  info              display information about the connected unit\n"
         << "  set NAME VALUE    set a configuration parameter. Call without\n"
         << "                    arguments for a list)\n"
+        << "  sensor NAME ENABLED enable (ENABLED='on') or disable (ENABLED='off')\n"
+        << "                    a particular sensor. Run without arguments for a list\n"
         << "\n"
         << "  find-rate         find the baud rate on a serial line. Do not specify\n"
         << "                    the rate in the URI\n"
@@ -107,9 +109,51 @@ int main(int argc, char** argv)
                 << "Orientation: " << to_string(conf.orientation) << "\n"
                 << "GPS Protocol: " << gpsProtocolToString(conf.gps_protocol) << "\n"
                 << "GPS Baud Rate: " << conf.gps_baud_rate << "\n"
+                << "Enabled Sensors:\n"
+                << "  Magnetometers:" << conf.use_magnetometers << "\n"
+                << "  GPS:" << conf.use_gps << "\n"
+                << "  GPS Course as Heading:" << conf.use_gps_course_as_heading << "\n"
                 << flush;
         }
         return 0;
+    }
+    else if (cmd == "sensor") {
+        if (argc == 3) {
+            cout << "Valid sensors: mag gps gps-course" << std::endl;
+            return 0;
+        }
+        else if (argc != 5) {
+            cerr << "sensor expects exactly two more parameters, NAME and ENABLED" << endl;
+            return 1;
+        }
+
+        string sensor = argv[3];
+        string enabled_s = argv[4];
+        if (enabled_s != "on" && enabled_s != "off") {
+            cerr << "ENABLED parameter must be 'on' or 'off'" << endl;
+            return 1;
+        }
+        bool enable = enabled_s == "on";
+
+        driver.openURI(uri);
+        auto conf = driver.readConfiguration();
+        bool mag = conf.use_magnetometers;
+        bool gps = conf.use_gps;
+        bool gps_course = conf.use_gps_course_as_heading;
+        if (sensor == "gps") {
+            gps = enable;
+        }
+        else if (sensor == "mag") {
+            mag = enable;
+        }
+        else if (sensor == "gps-course") {
+            gps_course = enable;
+        }
+        else {
+            cerr << "invalid sensor '" << sensor << "', run without arguments for a list"
+                 << endl;
+        }
+        driver.writeUsedSensors(mag, gps, gps_course);
     }
     else if (cmd == "set") {
         if (argc == 3) {

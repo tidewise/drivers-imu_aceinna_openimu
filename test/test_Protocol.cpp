@@ -97,6 +97,7 @@ TEST_F(ProtocolTest, it_parses_a_configuration_response) {
         1, 0, 0, 0, 0, 0, 0, 0, // GPS Protocol
         1, 0, 0, 0, 2, 0, 0, 0, // Hard Iron
         3, 0, 0, 0, 4, 0, 0, 0, // Soft Iron
+        4, 0, 0, 0, 4, 0, 0, 0 // Flags
     };
 
     auto conf = parseConfiguration(&buffer[0], buffer.size());
@@ -109,6 +110,9 @@ TEST_F(ProtocolTest, it_parses_a_configuration_response) {
     ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_PLUS_Z, conf.orientation.down);
     ASSERT_EQ(10, conf.gps_baud_rate);
     ASSERT_EQ(1, conf.gps_protocol);
+    ASSERT_EQ(0, conf.use_magnetometers);
+    ASSERT_EQ(0, conf.use_gps);
+    ASSERT_EQ(1, conf.use_gps_course_as_heading);
 }
 
 TEST_F(ProtocolTest, it_raises_if_configuration_buffer_is_smaller_than_the_expected_struct) {

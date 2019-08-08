@@ -75,6 +75,9 @@ namespace imu_aceinna_openimu {
         template<typename T>
         void writeConfiguration(int index, T value, bool validate = false);
 
+        /** Configure which sensors can be used by the algorithm */
+        void writeUsedSensors(bool magnetometers, bool gps, bool gps_course_as_heading);
+
         /** Save the configuration to flash */
         void saveConfiguration();
 

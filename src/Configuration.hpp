@@ -42,6 +42,10 @@ namespace imu_aceinna_openimu {
 
         GPSProtocol gps_protocol = GPS_UBLOX;
         int32_t gps_baud_rate = 115200;
+
+        bool use_gps = true;
+        bool use_magnetometers = true;
+        bool use_gps_course_as_heading = true;
     };
 
     inline std::string to_string(std::string const& value) { return value; }
