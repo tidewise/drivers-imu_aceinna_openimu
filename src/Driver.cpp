@@ -1,9 +1,17 @@
 #include <imu_aceinna_openimu/Driver.hpp>
 #include <imu_aceinna_openimu/Protocol.hpp>
+#include <iostream>
 
 using namespace std;
 using namespace imu_aceinna_openimu;
 
+struct NullStream : std::ostream {
+};
+static NullStream null_progress;
+
+ostream& Driver::nullStream() {
+    return null_progress;
+}
 
 Driver::Driver()
     : iodrivers_base::Driver(BUFFER_SIZE)
@@ -40,28 +48,226 @@ int Driver::readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* com
     return 0; // never reached
 }
 
-void Driver::openURI(std::string const& uri)
+void Driver::openURI(std::string const& uri, bool validateDevice)
 {
     iodrivers_base::Driver::openURI(uri);
-    mDeviceInfo = queryDeviceInfo();
+    mDeviceInfo = readDeviceInfo();
+    if (validateDevice && !mDeviceInfo.bootloader_mode) {
+        auto app_version = mDeviceInfo.app_version;
+        auto ins = app_version.substr(0, 3);
+        auto tw = app_version.substr(app_version.length() - 2, 2);
+        if (ins != "INS" || tw != "TW") {
+            close();
+            throw UnsupportedDevice("this driver requires the TideWise version "\
+                                    "of the INS app, got: " + app_version);
+        }
+    }
 }
 
-string Driver::queryDeviceInfo()
+DeviceInfo Driver::readDeviceInfo()
 {
-    auto packetEnd = protocol::queryDeviceInfo(mWriteBuffer);
+    auto packetEnd = protocol::queryDeviceID(mWriteBuffer);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
     auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
-    return protocol::parseDeviceInfo(
+    string deviceID = protocol::parseDeviceID(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD);
+
+    if (deviceID.find("OpenIMU_Bootloader") == 0) {
+        return DeviceInfo { true, deviceID, "" };
+    }
+
+    packetEnd = protocol::queryAppVersion(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    string appVersion = protocol::parseAppVersion(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD);
+    return DeviceInfo { false, deviceID, appVersion };
+}
+
+DeviceInfo Driver::getDeviceInfo() const
+{
+    return mDeviceInfo;
+}
+
+bool Driver::isBootloaderMode() const
+{
+    return mDeviceInfo.bootloader_mode;
+}
+
+Status Driver::readStatus()
+{
+    auto packetEnd = protocol::queryStatus(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    return protocol::parseStatus(
         mReadBuffer + protocol::PAYLOAD_OFFSET,
         packetSize - protocol::PACKET_OVERHEAD);
 }
 
-string Driver::getDeviceInfo() const
+Configuration Driver::readConfiguration()
 {
-    return mDeviceInfo;
+    auto packetEnd = protocol::queryConfiguration(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    return protocol::parseConfiguration(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD);
+}
+
+template<typename T>
+string to_string(T value) {
+    return std::to_string(value);
+}
+string to_string(string value) {
+    return value;
+}
+
+void Driver::queryReset() {
+    auto packetEnd = protocol::queryReset(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+}
+
+void Driver::queryRestoreDefaultConfiguration() {
+    auto packetEnd = protocol::queryRestoreDefaultConfiguration(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    std::cout << "response size: " << packetSize << std::endl;
+}
+
+template <typename T>
+void Driver::writeConfiguration(int index, T value, bool validate)
+{
+    auto packetEnd = protocol::writeConfiguration(mWriteBuffer, index, value);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    int packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    auto status = protocol::parseWriteConfigurationStatus(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD);
+
+    if (status != protocol::WRITE_STATUS_OK) {
+        string error_message;
+        if (status == protocol::WRITE_STATUS_INVALID_INDEX) {
+            error_message = "invalid parameter index";
+        }
+        else if (status == protocol::WRITE_STATUS_INVALID_VALUE) {
+            error_message = "invalid value " + to_string(value);
+        }
+        else {
+            error_message = "unknown error";
+        }
+        throw ConfigurationWriteFailed(
+            "writing configuration parameter " + to_string(index) + " failed: " +
+            error_message);
+    }
+
+    if (validate) {
+        auto actual = readConfiguration<T>(index);
+        if (actual != value) {
+            throw ConfigurationWriteFailed(
+                "writing configuration parameter " + to_string(index) + " failed. "
+                "Current property value is " + to_string(actual) +
+                ", expected " + to_string(value));
+        }
+    }
+}
+template void Driver::writeConfiguration<int64_t>(int, int64_t, bool);
+template void Driver::writeConfiguration<string>(int, string, bool);
+
+void Driver::writeConfiguration(Configuration const& conf, bool validate)
+{
+    writeConfiguration(3, conf.periodic_packet_type, validate);
+    writeConfiguration<int64_t>(4, conf.periodic_packet_rate, validate);
+    writeConfiguration<int64_t>(5, conf.acceleration_low_pass_filter, validate);
+    writeConfiguration<int64_t>(6, conf.angular_velocity_low_pass_filter, validate);
+    writeConfiguration(7, conf.orientation, validate);
+}
+
+template<typename T>
+T Driver::readConfiguration(int index)
+{
+    auto packetEnd = protocol::queryConfigurationParameter(mWriteBuffer, index);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    return protocol::parseConfigurationParameter<T>(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD,
+        index);
+}
+template int64_t Driver::readConfiguration<int64_t>(int index);
+template string Driver::readConfiguration<string>(int index);
+
+void Driver::saveConfiguration()
+{
+    auto packetEnd = protocol::queryConfigurationSave(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+}
+
+void Driver::writeBaudrate(int rate)
+{
+    auto packetEnd = protocol::writeConfiguration<int64_t>(mWriteBuffer, 2, rate);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+}
+
+void Driver::writePeriodicPacketConfiguration(string packet, int rate)
+{
+    writeConfiguration<string>(3, packet);
+    writeConfiguration<int64_t>(4, rate);
+}
+
+void Driver::writeUsedSensors(bool magnetometers, bool gps, bool gps_course_as_heading) {
+    int64_t field = 0;
+    if (magnetometers) field |= 1;
+    if (gps) field |= 2;
+    if (gps_course_as_heading) field |= 4;
+    writeConfiguration<int64_t>(12, field);
 }
 
 int Driver::extractPacket(uint8_t const* buffer, size_t bufferSize) const
 {
     return protocol::extractPacket(buffer, bufferSize);
+}
+
+void Driver::toBootloader()
+{
+    auto packetEnd = protocol::queryJumpToBootloader(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
+    close();
+}
+
+void Driver::toApp()
+{
+    auto packetEnd = protocol::queryJumpToApp(mWriteBuffer);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    close();
+}
+
+void Driver::writeFirmware(std::vector<uint8_t> const& bin, std::ostream& progress)
+{
+    unsigned int i = 0;
+    while (i < bin.size()) {
+        progress << "\r" << i << "/" << bin.size() << std::flush;
+        int remaining = bin.size() - i;
+        int blockSize = min(remaining, protocol::MAX_APP_BLOCK_SIZE);
+
+        auto packetEnd = protocol::queryAppBlockWrite(
+            mWriteBuffer, i, &bin[i], blockSize);
+        writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+        readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2,
+                         base::Time::fromSeconds(10));
+        i += blockSize;
+    }
+}
+
+EKFWithCovariance Driver::pollEKFWithCovariance()
+{
+    uint8_t code[2] = { 'e', '3' };
+    size_t packetSize =
+        readPacketsUntil(mReadBuffer, BUFFER_SIZE, code);
+    return protocol::parseEKFWithCovariance(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD);
 }

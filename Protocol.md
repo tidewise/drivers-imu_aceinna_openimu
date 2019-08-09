@@ -74,12 +74,55 @@ different payload.
 |-------|------|-------------|
 | 0 | uint64 | Data CRC |
 | 1 | uint64 | Data Size |
-| 2 | int64 | Baud Rate (115200, 57600, 230400, 38400) |
+| 2 | int64 | Baud Rate (230400, 115200, 57600, 38400) |
 | 3 | char[8] | Periodic Packet Type |
 | 4 | int64 | Periodic Packet Rate (200,1 00, 50, 20, 10, 5, 2, 0) |
 | 5 | int64 | Accel low-pass filter (50, 40, 25, 20, 10, 5, 2) |
-| 6 | int64 | Rate low-pass filter (50, 40, 25, 20, 10, 5, 2) |
+| 6 | int64 | Angular velocity low-pass filter (50, 40, 25, 20, 10, 5, 2) |
 | 7 | char[8] | Orientation ("+X+Y+Z") |
+| 8 | int64_t | GPS UART Baudrate |
+| 9 | int64_t | GPS Protocol |
+| 10 | float[2] | Hard iron X and Y |
+| 11 | float[2] | Soft iron ratio and angle |
+| 12 | int64_t | Enabled sensors |
+
+Orientation specifies the forward, right and down axis, encoded with a sign (+ or -)
+and an axis name (X, Y, Z). For instance, "+X-Y-Z" would mean:
+
+- forward axis is positive X
+- right axis is negative Y
+- up axis is positive Z
+
+Note that the unit does not verify that the system is right-handed. Don't
+know what would happen if it was not.
+
+Valid GPS protocols are:
+
+| Protocol | Value |
+|----------|-------|
+| UBlox Binary | 0 |
+| Novatel Binary | 1 |
+| Novatel ASCII | 2 |
+| NMEA0183 | 3 |
+| SIRF Binary | 4 |
+
+Used sensors configuration:
+
+| Bit | Description |
+|----------|-------|
+| 0 | Magnetometers |
+| 1 | GPS |
+| 2 | GPS Course used as heading |
+
+## Algorithm States
+
+| Value | Description |
+|-------|-------------|
+| 0 | Stabilize |
+| 1 | Initialize |
+| 2 | High-gain AHRS |
+| 3 | Low-gain AHRS |
+| 4 | INS |
 
 ## pG - Get device serial number and factory ID
 
@@ -121,8 +164,15 @@ different payload.
 | 24 | char[8] | Periodic Packet Type |
 | 32 | int64 | Periodic Packet Rate (200,1 00, 50, 20, 10, 5, 2, 0) |
 | 40 | int64 | Accel low-pass filter (50, 40, 25, 20, 10, 5, 2) |
-| 48 | int64 | Rate low-pass filter (50, 40, 25, 20, 10, 5, 2) |
+| 48 | int64 | Angular velocity low-pass filter (50, 40, 25, 20, 10, 5, 2) |
 | 56 | char[8] | Orientation ("+X+Y+Z") |
+| 64 | int64_t | GPS UART Baudrate |
+| 72 | int64_t | GPS Protocol |
+| 80 | float   | Hard iron X |
+| 84 | float   | Hard iron Y |
+| 88 | float   | Soft iron ratio |
+| 92 | float   | Soft iron angle |
+| 96 | int64_t | Enabled sensors |
 
 ## gP - Get single parameter
 
@@ -153,6 +203,9 @@ different payload.
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
 | 0 | int32 | Parameter Index |
+| 4 | int32 | Result |
+
+Result may be 0 (OK), -1 (INVALID_PARAM) or -2 (INVALID_VALUE)
 
 ## sC - Save configuration to flash
 
@@ -163,6 +216,35 @@ different payload.
 ### Reply
 
 - No payload
+
+## rD - Restore defaults
+
+Loads defaults to memory and save them to flash
+
+### Query
+
+- No payload
+
+### Reply
+
+- No payload
+
+## rS - Reset
+
+### Query
+
+- No payload
+
+### Reply
+
+- This message does not send any reply
+
+# Data packets
+
+Data packets are accessed in two ways. The first way is to set the periodic packet
+type and periodic packet rate, and listen for the generated packets. The second way
+is to use the 'mg' packet.
+
 
 ## z1 - Scaled 9-axis IMU packet
 
@@ -321,6 +403,57 @@ different payload.
 | 121 | uint8 | linAccSw |
 | 122 | uint8 | turnSw |
 
+## e3 - INS Output Message with Covariances
+
+### Query
+
+- No payload
+
+### Reply
+
+| Offset | Type   | Description |
+|--------|--------|--------------------------|
+| 0 | uint32 | GPS time of week (ms) |
+| 4 | float | Roll (deg) |
+| 8 | float | Pitch (deg) |
+| 12 | float | Yaw (deg) |
+| 16 | float | Roll Covariance (deg^2) |
+| 20 | float | Pitch Covariance (deg^2) |
+| 24 | float | Yaw Covariance (deg^2) |
+| 28 | float | Acceleration along X (g) |
+| 32 | float | Acceleration along Y (g) |
+| 36 | float | Acceleration along Z (g) |
+| 40 | float | Acceleration covarianceX (g^2) |
+| 44 | float | Acceleration covarianceY (g^2) |
+| 48 | float | Acceleration covarianceZ (g^2) |
+| 52 | float | Angular velocity around X (deg/s) |
+| 56 | float | Angular velocity around Y (deg/s) |
+| 60 | float | Angular velocity around Z (deg/s) |
+| 64 | float | Angular velocity covariance X ((deg/s)^2) |
+| 68 | float | Angular velocity covariance Y ((deg/s)^2) |
+| 72 | float | Angular velocity covariance Z ((deg/s)^2) |
+| 76 | float | Velocity North (m/s) |
+| 80 | float | Velocity East (m/s) |
+| 84 | float | Velocity Down (m/s) |
+| 88 | float | Velocity North covariance (Gauss^2) |
+| 92 | float | Velocity Est covariance (Gauss^2) |
+| 96 | float | Velocity Down covariance (Gauss^2) |
+| 100 | double | Latitude (deg) |
+| 108 | double | Longitude (deg) |
+| 116 | double | Altitude (m) |
+| 124 | float | Position covariance N (m^2) |
+| 128 | float | Position covariance E (m^2) |
+| 132 | float | Position covariance D (m^2) |
+| 136 | uint8 | Status byte |
+
+Status byte:
+
+| Length (bit) | Description |
+|--------------|-------------|
+| 3 | Algorithm state (see beginning of section) |
+| 1 | Still switch |
+| 1 | Turn switch |
+
 ## s1 - IMU Scaled Sensors
 
 ### Query
@@ -343,3 +476,48 @@ different payload.
 | 40 | float | Magnetic field Y (Gauss) |
 | 44 | float | Magnetic field Z (Gauss) |
 | 48 | float | Degrees (C) |
+
+## JI - Jump to Bootloader
+
+Note: communication will switch to 57600 baud *after* JI is acknowledged
+
+**IMPORTANT**: you cannot switch back to app mode after a jump to bootloader.
+A new firmware **MUST** be written first.
+
+### Query
+
+- No payload
+
+### Response
+
+- No payload
+
+## JA - Jump to App
+
+### Query
+
+- No payload
+
+## Response
+
+**This packet has no response**
+
+## WA - Write App Block
+
+**NOTE**: the unit usually takes a longer time to respond to the first WA call.
+Use a longer timeout.
+
+### Query
+
+| Offset | Type   | Description |
+|--------|--------|--------------------------|
+| 0 | uint8 | Target address[3] MSB |
+| 1 | uint8 | Target address[2] |
+| 2 | uint8 | Target address[1] |
+| 3 | uint8 | Target address[0] LSB |
+| 4 | uint8 | Length of data block in bytes |
+| 5 | N bytes | Data - Max 240 bytes |
+
+### Response
+
+- No payload
