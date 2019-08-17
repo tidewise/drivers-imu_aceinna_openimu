@@ -7,20 +7,28 @@
 using namespace std;
 using namespace imu_aceinna_openimu;
 
+enum ParameterType {
+    PARAM_STRING,
+    PARAM_INTEGER,
+    PARAM_ORIENTATION,
+    PARAM_OTHER
+};
+
 struct Parameter {
     char const* name;
     int index;
-    bool is_integer;
-    bool is_orientation;
+    ParameterType type = PARAM_OTHER;
 };
 
 static const Parameter PARAMETERS[] = {
-    { "periodic-packet-type", 3, false, false },
-    { "periodic-packet-rate", 4, true, false },
-    { "acceleration-filter", 5, true, false },
-    { "angular-velocity-filter", 6, true, false },
-    { "orientation", 7, false, true },
-    { nullptr, 0, false, false }
+    { "periodic-packet-type", 3, PARAM_STRING },
+    { "periodic-packet-rate", 4, PARAM_INTEGER },
+    { "acceleration-filter", 5, PARAM_INTEGER },
+    { "angular-velocity-filter", 6, PARAM_INTEGER },
+    { "orientation", 7, PARAM_ORIENTATION },
+    { "gps-baudrate", 8, PARAM_INTEGER },
+    { "gps-protocol", 9, PARAM_OTHER },
+    { nullptr, 0, PARAM_OTHER }
 };
 
 Parameter const* findParameter(string name) {
@@ -38,16 +46,45 @@ void displayParameters(ostream& stream) {
     }
 }
 
-string gpsProtocolToString(GPSProtocol protocol) {
-    switch(protocol) {
-        case GPS_AUTO: return "auto";
-        case GPS_UBLOX: return "uBlox";
-        case GPS_NOVATEL_BINARY: return "Novatel Binary";
-        case GPS_NOVATEL_ASCII: return "Novatel ASCII";
-        case GPS_NMEA0183: return "NMEA 0183";
-        case GPS_SIRF_BINARY: return "SIRF Binary";
-        default: return "unknown";
+struct GPSProtocolDescription {
+    GPSProtocol protocol;
+    string name;
+};
+
+GPSProtocolDescription GPS_PROTOCOLS[] = {
+    { GPS_AUTO, "auto" },
+    { GPS_UBLOX, "ublox" },
+    { GPS_NOVATEL_BINARY, "novatel-binary" },
+    { GPS_NOVATEL_ASCII, "novatel-ascii" },
+    { GPS_NMEA0183, "nmea" },
+    { GPS_SIRF_BINARY, "sirf-binary" }
+};
+
+void gpsDisplayProtocolList(ostream& out) {
+    bool first = true;
+    for (auto i : GPS_PROTOCOLS) {
+        if (!first)
+            out << ", ";
+        out << i.name;
     }
+}
+
+string gpsProtocolToString(GPSProtocol protocol) {
+    for (auto i : GPS_PROTOCOLS) {
+        if (protocol == i.protocol) {
+            return i.name;
+        }
+    }
+    throw std::invalid_argument("unknown protocol code " + to_string(protocol));
+}
+
+GPSProtocol gpsProtocolFromString(string name) {
+    for (auto i : GPS_PROTOCOLS) {
+        if (name == i.name) {
+            return i.protocol;
+        }
+    }
+    throw std::invalid_argument("unknown protocol name " + name);
 }
 
 int usage()
@@ -89,8 +126,8 @@ int main(int argc, char** argv)
     string cmd(argv[2]);
 
     Driver driver;
-    driver.setReadTimeout(base::Time::fromMilliseconds(100));
-    driver.setWriteTimeout(base::Time::fromMilliseconds(100));
+    driver.setReadTimeout(base::Time::fromMilliseconds(1000));
+    driver.setWriteTimeout(base::Time::fromMilliseconds(1000));
 
     if (cmd == "info") {
         driver.openURI(uri);
@@ -202,17 +239,24 @@ int main(int argc, char** argv)
         }
 
         driver.openURI(uri);
-        if (definition->is_integer) {
+        if (param_name == "gps-protocol") {
+            int64_t protocol = gpsProtocolFromString(param_value);
+            driver.writeConfiguration(definition->index, protocol, true);
+        }
+        else if (definition->type == PARAM_INTEGER) {
             int64_t written_value = std::stoll(param_value);
             driver.writeConfiguration(definition->index, written_value, true);
         }
-        else if (definition->is_orientation) {
+        else if (definition->type == PARAM_ORIENTATION) {
             Configuration::Orientation written_value =
                 protocol::decodeOrientationString(param_value);
             driver.writeConfiguration(definition->index, written_value, true);
         }
-        else {
+        else if (definition->type == PARAM_STRING) {
             driver.writeConfiguration(definition->index, param_value, true);
+        }
+        else {
+            throw std::invalid_argument("do not know how to set parameter " + param_name);
         }
     }
     else if (cmd == "poll") {
