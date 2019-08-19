@@ -362,11 +362,15 @@ Status protocol::parseStatus(uint8_t const* buffer, int size)
     uint8_t const* end = buffer + size;
     uint8_t const* cursor = buffer;
 
-    uint32_t time, last_gps, last_gps_velocity;
+    uint32_t time, last_gps_message, last_gps, last_gps_velocity, gps_rx;
+    uint16_t gps_overflows;
     uint8_t temperature_C;
     cursor = endianness::decode(cursor, time, end);
+    cursor = endianness::decode(cursor, last_gps_message, end);
     cursor = endianness::decode(cursor, last_gps, end);
     cursor = endianness::decode(cursor, last_gps_velocity, end);
+    cursor = endianness::decode(cursor, gps_rx, end);
+    cursor = endianness::decode(cursor, gps_overflows, end);
     cursor = endianness::decode(cursor, temperature_C, end);
 
     if (cursor != end) {
@@ -375,6 +379,9 @@ Status protocol::parseStatus(uint8_t const* buffer, int size)
 
     Status ret;
     ret.time = base::Time::fromMilliseconds(time);
+    ret.gps_rx = gps_rx;
+    ret.gps_overflows = gps_overflows;
+    ret.last_gps_message = base::Time::fromMilliseconds(last_gps_message);
     ret.last_good_gps = base::Time::fromMilliseconds(last_gps);
     ret.last_usable_gps_velocity = base::Time::fromMilliseconds(last_gps_velocity);
     ret.temperature = base::Temperature::fromCelsius(temperature_C);

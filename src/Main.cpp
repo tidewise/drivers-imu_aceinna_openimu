@@ -156,8 +156,11 @@ int main(int argc, char** argv)
                 << "\n"
                 << "Status\n"
                 << "  Time: " << status.time << "\n"
+                << "  Last GPS message received at: " << status.last_gps_message << "\n"
                 << "  Last good GPS received at: " << status.last_good_gps << "\n"
                 << "  Last usable GPS velocity at: " << status.last_usable_gps_velocity << "\n"
+                << "  Bytes received on GPS UART: " << status.gps_rx << "\n"
+                << "  Overflows on GPS UART: " << status.gps_overflows << "\n"
                 << "  Temperature: " << status.temperature.getCelsius() << " C\n"
                 << flush;
         }
