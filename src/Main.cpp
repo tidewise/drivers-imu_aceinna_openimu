@@ -57,7 +57,8 @@ GPSProtocolDescription GPS_PROTOCOLS[] = {
     { GPS_NOVATEL_BINARY, "novatel-binary" },
     { GPS_NOVATEL_ASCII, "novatel-ascii" },
     { GPS_NMEA0183, "nmea" },
-    { GPS_SIRF_BINARY, "sirf-binary" }
+    { GPS_SIRF_BINARY, "sirf-binary" },
+    { GPS_UBLOX_PVT, "ublox-pvt" }
 };
 
 void gpsDisplayProtocolList(ostream& out) {
