@@ -201,7 +201,7 @@ Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize
     ret.gps_baud_rate = baudrate;
 
     // Read but ignore
-    float magneticCalibration[4];
+    double magneticCalibration[4];
     for (int i = 0; i < 4; ++i)
         cursor = decode(cursor, magneticCalibration[i], end);
 

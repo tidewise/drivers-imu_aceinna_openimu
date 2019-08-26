@@ -95,8 +95,10 @@ TEST_F(ProtocolTest, it_parses_a_configuration_response) {
         '+', 'X', '-', 'Y', '+', 'Z', ' ', ' ', // Orientation
         10, 0, 0, 0, 0, 0, 0, 0, // GPS Baudrate
         1, 0, 0, 0, 0, 0, 0, 0, // GPS Protocol
-        1, 0, 0, 0, 2, 0, 0, 0, // Hard Iron
-        3, 0, 0, 0, 4, 0, 0, 0, // Soft Iron
+        1, 0, 0, 0, 0, 0, 0, 0, // Hard Iron X
+        2, 0, 0, 0, 0, 0, 0, 0, // Hard Iron Y
+        3, 0, 0, 0, 0, 0, 0, 0, // Soft Iron X
+        4, 0, 0, 0, 0, 0, 0, 0, // Soft Iron Y
         4, 0, 0, 0, 4, 0, 0, 0 // Flags
     };
 
