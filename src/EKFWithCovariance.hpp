@@ -4,6 +4,7 @@
 #include <base/Float.hpp>
 #include <base/samples/RigidBodyState.hpp>
 #include <base/samples/RigidBodyAcceleration.hpp>
+#include <base/Angle.hpp>
 #include <imu_aceinna_openimu/FilterState.hpp>
 
 namespace imu_aceinna_openimu {
@@ -13,8 +14,8 @@ namespace imu_aceinna_openimu {
         base::samples::RigidBodyAcceleration rba;
         FilterState filter_state;
 
-        double latitude = base::unknown<double>();
-        double longitude = base::unknown<double>();
+        base::Angle latitude;
+        base::Angle longitude;
     };
 }
 

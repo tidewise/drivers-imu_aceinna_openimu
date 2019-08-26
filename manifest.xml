@@ -7,6 +7,7 @@
   <url>http://github.com/tidewise/drivers-imu_aceinna_openimu</url>
   <depend package="base/cmake" />
   <depend package="base/types" />
+  <depend package="drivers/gps_base" />
   <depend package="drivers/iodrivers_base" />
   <test_depend package="google-test" />
 </package>

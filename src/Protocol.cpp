@@ -454,8 +454,8 @@ EKFWithCovariance protocol::parseEKFWithCovariance(uint8_t const* buffer, int bu
 
         rbs.cov_position = Eigen::DiagonalMatrix<double, 3>(
             pos_covariance[0], pos_covariance[1], pos_covariance[2]);
-        result.latitude = lat_lon_alt[0];
-        result.longitude = lat_lon_alt[1];
+        result.latitude = base::Angle::fromDeg(lat_lon_alt[0]);
+        result.longitude = base::Angle::fromDeg(lat_lon_alt[1]);
     }
 
     result.rbs = rbs;
