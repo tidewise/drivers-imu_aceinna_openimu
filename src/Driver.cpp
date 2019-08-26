@@ -256,6 +256,24 @@ void Driver::writeFirmware(std::vector<uint8_t> const& bin, std::ostream& progre
     }
 }
 
+Driver::UpdateType Driver::processOne() {
+    int packetSize = readPacket(mReadBuffer, BUFFER_SIZE);
+
+    if (mReadBuffer[2] == 'e' && mReadBuffer[3] == '3') {
+        mState = protocol::parseEKFWithCovariance(
+            mReadBuffer + protocol::PAYLOAD_OFFSET,
+            packetSize - protocol::PACKET_OVERHEAD);
+
+        return UPDATED_STATE;
+    }
+    return UPDATED_IGNORED;
+}
+
+EKFWithCovariance Driver::getState() const
+{
+    return mState;
+}
+
 EKFWithCovariance Driver::pollEKFWithCovariance()
 {
     uint8_t code[2] = { 'e', '3' };

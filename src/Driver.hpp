@@ -19,6 +19,8 @@ namespace imu_aceinna_openimu {
         uint8_t mWriteBuffer[BUFFER_SIZE];
         uint8_t mReadBuffer[BUFFER_SIZE];
 
+        EKFWithCovariance mState;
+
         template<typename T>
         void writeConfigurationGeneric(int index, T value, bool validate);
 
@@ -115,6 +117,20 @@ namespace imu_aceinna_openimu {
         void toApp();
 
         static std::ostream& nullStream();
+
+        enum UpdateType
+        {
+            UPDATED_STATE,
+            UPDATED_RAW_IMU_SENSORS,
+            UPDATED_STATUS,
+            UPDATED_IGNORED
+        };
+
+        UpdateType processOne();
+
+        /** Return the last state received by processOne
+         */
+        EKFWithCovariance getState() const;
 
         EKFWithCovariance pollEKFWithCovariance();
 
