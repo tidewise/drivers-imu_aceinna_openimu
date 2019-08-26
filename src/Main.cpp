@@ -137,8 +137,8 @@ int main(int argc, char** argv)
 
     if (cmd == "info") {
         driver.openURI(uri);
-        auto info = driver.getDeviceInfo();
-        if (driver.isBootloaderMode()) {
+        auto info = driver.validateDevice(true);
+        if (info.bootloader_mode) {
             cout << "ID: " << info.device_id << std::endl;
         }
         else {
@@ -179,6 +179,7 @@ int main(int argc, char** argv)
         }
 
         driver.openURI(uri);
+        driver.validateDevice();
         while(true) {
             auto status = driver.readStatus();
             cout << status.time << " " << status.last_good_gps << " "
@@ -206,6 +207,7 @@ int main(int argc, char** argv)
         bool enable = enabled_s == "on";
 
         driver.openURI(uri);
+        driver.validateDevice();
         auto conf = driver.readConfiguration();
         bool mag = conf.use_magnetometers;
         bool gps = conf.use_gps;
@@ -248,6 +250,7 @@ int main(int argc, char** argv)
         }
 
         driver.openURI(uri);
+        driver.validateDevice();
         if (param_name == "gps-protocol") {
             int64_t protocol = gpsProtocolFromString(param_value);
             driver.writeConfiguration(definition->index, protocol, true);
@@ -275,6 +278,7 @@ int main(int argc, char** argv)
         }
 
         driver.openURI(uri);
+        driver.validateDevice();
         driver.writePeriodicPacketConfiguration("e3", 10);
         while(true) {
             auto state = driver.pollEKFWithCovariance();
@@ -292,6 +296,7 @@ int main(int argc, char** argv)
     }
     else if (cmd == "save-config") {
         driver.openURI(uri);
+        driver.validateDevice();
         driver.saveConfiguration();
     }
     else if (cmd == "set-rate") {
@@ -303,6 +308,7 @@ int main(int argc, char** argv)
         int rate = stoll(argv[3]);
         cout << "Changing baud rate to " << rate << std::endl;
         driver.openURI(uri);
+        driver.validateDevice();
         driver.writeBaudrate(stoll(argv[3]));
         driver.saveConfiguration();
         cout << "You need to restart the IMU for the change to take effect" << std::endl;
@@ -325,7 +331,7 @@ int main(int argc, char** argv)
             }
             catch(iodrivers_base::TimeoutError&) {}
         }
-        auto info = driver.getDeviceInfo();
+        auto info = driver.validateDevice();
 
         cout
             << "ID: " << info.device_id << "\n"
@@ -353,14 +359,16 @@ int main(int argc, char** argv)
         file.close();
 
         driver.openURI(uri);
-        if (!driver.isBootloaderMode()) {
+        auto info = driver.validateDevice(true);
+        if (!info.bootloader_mode) {
             driver.toBootloader();
             if (uri.find("serial://") == 0) {
                 string bootloader_uri = uri.substr(0, uri.rfind(":")) + ":57600";
                 driver.openURI(bootloader_uri);
+                info = driver.readDeviceInfo();
                 cout << "contacted unit in bootloader mode at "
                      << bootloader_uri << endl;
-                if (!driver.isBootloaderMode()) {
+                if (!info.bootloader_mode) {
                     std::cerr << "failed to switch to bootloader mode" << std::endl;
                     return 1;
                 }
@@ -378,7 +386,7 @@ int main(int argc, char** argv)
         sleep(5); // from the python code
         driver.openURI(uri);
         cout << "\rfirmware update successful" << endl;
-        auto info = driver.getDeviceInfo();
+        info = driver.readDeviceInfo();
         cout
             << "ID: " << info.device_id << "\n"
             << "App: " << info.app_version << std::endl;

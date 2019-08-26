@@ -33,9 +33,6 @@ namespace imu_aceinna_openimu {
         /** @overload */
         int readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* command);
 
-        DeviceInfo mDeviceInfo;
-        DeviceInfo readDeviceInfo();
-
     public:
         Driver();
 
@@ -43,17 +40,13 @@ namespace imu_aceinna_openimu {
             using std::runtime_error::runtime_error;
         };
 
-        /**
-         * @param validateDevice validates that the openIMU device firmware is
-         *                       compatible with this driver. See README.md.
+        /** Validate that the device and its firmware are compatible with
+         * this driver
          */
-        void openURI(std::string const& uri, bool validateDevice = true);
+        DeviceInfo validateDevice(bool allow_bootloader = false);
 
-        /** Information about the device */
-        DeviceInfo getDeviceInfo() const;
-
-        /** Whether the device is in bootloader mode or in app mode */
-        bool isBootloaderMode() const;
+        /** Read the device information */
+        DeviceInfo readDeviceInfo();
 
         /** Read the current device configuration */
         Configuration readConfiguration();

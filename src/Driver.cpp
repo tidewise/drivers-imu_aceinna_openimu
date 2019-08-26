@@ -48,12 +48,11 @@ int Driver::readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* com
     return 0; // never reached
 }
 
-void Driver::openURI(std::string const& uri, bool validateDevice)
+DeviceInfo Driver::validateDevice(bool allow_bootloader)
 {
-    iodrivers_base::Driver::openURI(uri);
-    mDeviceInfo = readDeviceInfo();
-    if (validateDevice && !mDeviceInfo.bootloader_mode) {
-        auto app_version = mDeviceInfo.app_version;
+    auto deviceInfo = readDeviceInfo();
+    if (!deviceInfo.bootloader_mode) {
+        auto app_version = deviceInfo.app_version;
         auto ins = app_version.substr(0, 3);
         auto tw = app_version.substr(app_version.length() - 2, 2);
         if (ins != "INS" || tw != "TW") {
@@ -62,6 +61,11 @@ void Driver::openURI(std::string const& uri, bool validateDevice)
                                     "of the INS app, got: " + app_version);
         }
     }
+    else if (!allow_bootloader) {
+        throw UnsupportedDevice("device is in bootloader mode");
+    }
+
+    return deviceInfo;
 }
 
 DeviceInfo Driver::readDeviceInfo()
@@ -84,16 +88,6 @@ DeviceInfo Driver::readDeviceInfo()
         mReadBuffer + protocol::PAYLOAD_OFFSET,
         packetSize - protocol::PACKET_OVERHEAD);
     return DeviceInfo { false, deviceID, appVersion };
-}
-
-DeviceInfo Driver::getDeviceInfo() const
-{
-    return mDeviceInfo;
-}
-
-bool Driver::isBootloaderMode() const
-{
-    return mDeviceInfo.bootloader_mode;
 }
 
 Status Driver::readStatus()
