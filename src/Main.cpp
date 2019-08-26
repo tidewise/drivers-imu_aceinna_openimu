@@ -18,16 +18,18 @@ struct Parameter {
     char const* name;
     int index;
     ParameterType type = PARAM_OTHER;
+    char const* doc;
 };
 
 static const Parameter PARAMETERS[] = {
-    { "periodic-packet-type", 3, PARAM_STRING },
-    { "periodic-packet-rate", 4, PARAM_INTEGER },
-    { "acceleration-filter", 5, PARAM_INTEGER },
-    { "angular-velocity-filter", 6, PARAM_INTEGER },
-    { "orientation", 7, PARAM_ORIENTATION },
-    { "gps-baudrate", 8, PARAM_INTEGER },
-    { "gps-protocol", 9, PARAM_OTHER },
+    { "periodic-packet-type", 3, PARAM_STRING, nullptr },
+    { "periodic-packet-rate", 4, PARAM_INTEGER, nullptr },
+    { "acceleration-filter", 5, PARAM_INTEGER, nullptr },
+    { "angular-velocity-filter", 6, PARAM_INTEGER, nullptr },
+    { "orientation", 7, PARAM_ORIENTATION, nullptr },
+    { "gps-baudrate", 8, PARAM_INTEGER, nullptr },
+    { "gps-protocol", 9, PARAM_OTHER, nullptr },
+    { "filter-config", 14, PARAM_INTEGER, "sum of use-magnetometers(1), use-gps(2) and course-as-heading(4)" },
     { nullptr, 0, PARAM_OTHER }
 };
 
@@ -43,6 +45,9 @@ Parameter const* findParameter(string name) {
 void displayParameters(ostream& stream) {
     for (auto p = PARAMETERS; p->name; ++p) {
         stream << "\n" << p->name;
+        if (p->doc) {
+            stream << ": " << p->doc;
+        }
     }
 }
 
