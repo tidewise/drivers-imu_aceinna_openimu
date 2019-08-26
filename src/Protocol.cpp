@@ -456,6 +456,7 @@ EKFWithCovariance protocol::parseEKFWithCovariance(uint8_t const* buffer, int bu
             pos_covariance[0], pos_covariance[1], pos_covariance[2]);
         result.latitude = base::Angle::fromDeg(lat_lon_alt[0]);
         result.longitude = base::Angle::fromDeg(lat_lon_alt[1]);
+        rbs.position.z() = lat_lon_alt[2];
     }
 
     result.rbs = rbs;
