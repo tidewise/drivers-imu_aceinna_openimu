@@ -7,6 +7,9 @@
 namespace imu_aceinna_openimu {
     struct Status {
         base::Time time;
+        uint32_t gps_rx = 0;
+        uint32_t gps_overflows = 0;
+        base::Time last_gps_message;
         base::Time last_good_gps;
         base::Time last_usable_gps_velocity;
         base::Temperature temperature;

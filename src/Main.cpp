@@ -7,20 +7,30 @@
 using namespace std;
 using namespace imu_aceinna_openimu;
 
+enum ParameterType {
+    PARAM_STRING,
+    PARAM_INTEGER,
+    PARAM_ORIENTATION,
+    PARAM_OTHER
+};
+
 struct Parameter {
     char const* name;
     int index;
-    bool is_integer;
-    bool is_orientation;
+    ParameterType type = PARAM_OTHER;
+    char const* doc;
 };
 
 static const Parameter PARAMETERS[] = {
-    { "periodic-packet-type", 3, false, false },
-    { "periodic-packet-rate", 4, true, false },
-    { "acceleration-filter", 5, true, false },
-    { "angular-velocity-filter", 6, true, false },
-    { "orientation", 7, false, true },
-    { nullptr, 0, false, false }
+    { "periodic-packet-type", 3, PARAM_STRING, nullptr },
+    { "periodic-packet-rate", 4, PARAM_INTEGER, nullptr },
+    { "acceleration-filter", 5, PARAM_INTEGER, nullptr },
+    { "angular-velocity-filter", 6, PARAM_INTEGER, nullptr },
+    { "orientation", 7, PARAM_ORIENTATION, nullptr },
+    { "gps-baudrate", 8, PARAM_INTEGER, nullptr },
+    { "gps-protocol", 9, PARAM_OTHER, nullptr },
+    { "filter-config", 14, PARAM_INTEGER, "sum of use-magnetometers(1), use-gps(2) and course-as-heading(4)" },
+    { nullptr, 0, PARAM_OTHER }
 };
 
 Parameter const* findParameter(string name) {
@@ -35,19 +45,52 @@ Parameter const* findParameter(string name) {
 void displayParameters(ostream& stream) {
     for (auto p = PARAMETERS; p->name; ++p) {
         stream << "\n" << p->name;
+        if (p->doc) {
+            stream << ": " << p->doc;
+        }
+    }
+}
+
+struct GPSProtocolDescription {
+    GPSProtocol protocol;
+    string name;
+};
+
+GPSProtocolDescription GPS_PROTOCOLS[] = {
+    { GPS_AUTO, "auto" },
+    { GPS_UBLOX, "ublox" },
+    { GPS_NOVATEL_BINARY, "novatel-binary" },
+    { GPS_NOVATEL_ASCII, "novatel-ascii" },
+    { GPS_NMEA0183, "nmea" },
+    { GPS_SIRF_BINARY, "sirf-binary" },
+    { GPS_UBLOX_PVT, "ublox-pvt" }
+};
+
+void gpsDisplayProtocolList(ostream& out) {
+    bool first = true;
+    for (auto i : GPS_PROTOCOLS) {
+        if (!first)
+            out << ", ";
+        out << i.name;
     }
 }
 
 string gpsProtocolToString(GPSProtocol protocol) {
-    switch(protocol) {
-        case GPS_AUTO: return "auto";
-        case GPS_UBLOX: return "uBlox";
-        case GPS_NOVATEL_BINARY: return "Novatel Binary";
-        case GPS_NOVATEL_ASCII: return "Novatel ASCII";
-        case GPS_NMEA0183: return "NMEA 0183";
-        case GPS_SIRF_BINARY: return "SIRF Binary";
-        default: return "unknown";
+    for (auto i : GPS_PROTOCOLS) {
+        if (protocol == i.protocol) {
+            return i.name;
+        }
     }
+    throw std::invalid_argument("unknown protocol code " + to_string(protocol));
+}
+
+GPSProtocol gpsProtocolFromString(string name) {
+    for (auto i : GPS_PROTOCOLS) {
+        if (name == i.name) {
+            return i.protocol;
+        }
+    }
+    throw std::invalid_argument("unknown protocol name " + name);
 }
 
 int usage()
@@ -89,13 +132,13 @@ int main(int argc, char** argv)
     string cmd(argv[2]);
 
     Driver driver;
-    driver.setReadTimeout(base::Time::fromMilliseconds(100));
-    driver.setWriteTimeout(base::Time::fromMilliseconds(100));
+    driver.setReadTimeout(base::Time::fromMilliseconds(1000));
+    driver.setWriteTimeout(base::Time::fromMilliseconds(1000));
 
     if (cmd == "info") {
         driver.openURI(uri);
-        auto info = driver.getDeviceInfo();
-        if (driver.isBootloaderMode()) {
+        auto info = driver.validateDevice(true);
+        if (info.bootloader_mode) {
             cout << "ID: " << info.device_id << std::endl;
         }
         else {
@@ -119,8 +162,11 @@ int main(int argc, char** argv)
                 << "\n"
                 << "Status\n"
                 << "  Time: " << status.time << "\n"
+                << "  Last GPS message received at: " << status.last_gps_message << "\n"
                 << "  Last good GPS received at: " << status.last_good_gps << "\n"
                 << "  Last usable GPS velocity at: " << status.last_usable_gps_velocity << "\n"
+                << "  Bytes received on GPS UART: " << status.gps_rx << "\n"
+                << "  Overflows on GPS UART: " << status.gps_overflows << "\n"
                 << "  Temperature: " << status.temperature.getCelsius() << " C\n"
                 << flush;
         }
@@ -133,6 +179,7 @@ int main(int argc, char** argv)
         }
 
         driver.openURI(uri);
+        driver.validateDevice();
         while(true) {
             auto status = driver.readStatus();
             cout << status.time << " " << status.last_good_gps << " "
@@ -160,6 +207,7 @@ int main(int argc, char** argv)
         bool enable = enabled_s == "on";
 
         driver.openURI(uri);
+        driver.validateDevice();
         auto conf = driver.readConfiguration();
         bool mag = conf.use_magnetometers;
         bool gps = conf.use_gps;
@@ -202,17 +250,25 @@ int main(int argc, char** argv)
         }
 
         driver.openURI(uri);
-        if (definition->is_integer) {
+        driver.validateDevice();
+        if (param_name == "gps-protocol") {
+            int64_t protocol = gpsProtocolFromString(param_value);
+            driver.writeConfiguration(definition->index, protocol, true);
+        }
+        else if (definition->type == PARAM_INTEGER) {
             int64_t written_value = std::stoll(param_value);
             driver.writeConfiguration(definition->index, written_value, true);
         }
-        else if (definition->is_orientation) {
+        else if (definition->type == PARAM_ORIENTATION) {
             Configuration::Orientation written_value =
                 protocol::decodeOrientationString(param_value);
             driver.writeConfiguration(definition->index, written_value, true);
         }
-        else {
+        else if (definition->type == PARAM_STRING) {
             driver.writeConfiguration(definition->index, param_value, true);
+        }
+        else {
+            throw std::invalid_argument("do not know how to set parameter " + param_name);
         }
     }
     else if (cmd == "poll") {
@@ -222,6 +278,7 @@ int main(int argc, char** argv)
         }
 
         driver.openURI(uri);
+        driver.validateDevice();
         driver.writePeriodicPacketConfiguration("e3", 10);
         while(true) {
             auto state = driver.pollEKFWithCovariance();
@@ -239,6 +296,7 @@ int main(int argc, char** argv)
     }
     else if (cmd == "save-config") {
         driver.openURI(uri);
+        driver.validateDevice();
         driver.saveConfiguration();
     }
     else if (cmd == "set-rate") {
@@ -250,6 +308,7 @@ int main(int argc, char** argv)
         int rate = stoll(argv[3]);
         cout << "Changing baud rate to " << rate << std::endl;
         driver.openURI(uri);
+        driver.validateDevice();
         driver.writeBaudrate(stoll(argv[3]));
         driver.saveConfiguration();
         cout << "You need to restart the IMU for the change to take effect" << std::endl;
@@ -272,7 +331,7 @@ int main(int argc, char** argv)
             }
             catch(iodrivers_base::TimeoutError&) {}
         }
-        auto info = driver.getDeviceInfo();
+        auto info = driver.validateDevice();
 
         cout
             << "ID: " << info.device_id << "\n"
@@ -300,14 +359,16 @@ int main(int argc, char** argv)
         file.close();
 
         driver.openURI(uri);
-        if (!driver.isBootloaderMode()) {
+        auto info = driver.validateDevice(true);
+        if (!info.bootloader_mode) {
             driver.toBootloader();
             if (uri.find("serial://") == 0) {
                 string bootloader_uri = uri.substr(0, uri.rfind(":")) + ":57600";
                 driver.openURI(bootloader_uri);
+                info = driver.readDeviceInfo();
                 cout << "contacted unit in bootloader mode at "
                      << bootloader_uri << endl;
-                if (!driver.isBootloaderMode()) {
+                if (!info.bootloader_mode) {
                     std::cerr << "failed to switch to bootloader mode" << std::endl;
                     return 1;
                 }
@@ -325,7 +386,7 @@ int main(int argc, char** argv)
         sleep(5); // from the python code
         driver.openURI(uri);
         cout << "\rfirmware update successful" << endl;
-        auto info = driver.getDeviceInfo();
+        info = driver.readDeviceInfo();
         cout
             << "ID: " << info.device_id << "\n"
             << "App: " << info.app_version << std::endl;

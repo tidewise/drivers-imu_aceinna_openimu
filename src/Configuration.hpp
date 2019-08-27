@@ -20,7 +20,8 @@ namespace imu_aceinna_openimu {
         GPS_NOVATEL_ASCII = 2,
         GPS_NMEA0183 = 3,
         GPS_SIRF_BINARY = 4,
-        GPS_LAST_KNOWN_PROTOCOL = GPS_SIRF_BINARY
+        GPS_UBLOX_PVT = 5,
+        GPS_LAST_KNOWN_PROTOCOL = GPS_UBLOX_PVT
     };
 
     struct Configuration {
