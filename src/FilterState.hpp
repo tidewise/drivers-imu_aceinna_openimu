@@ -24,7 +24,8 @@ namespace imu_aceinna_openimu {
 
         FilterMode mode;
 
-        /* @meta bitfield /imu_aceinna_openimu/FilterStatus */
+        /* @meta bitfield /imu_aceinna_openimu/FilterStatus
+         */
         int32_t status;
 
         std::string toString() const;
