@@ -108,6 +108,11 @@ int usage()
         << "\n"
         << "  find-rate         find the baud rate on a serial line. Do not specify\n"
         << "                    the rate in the URI\n"
+        << "  set-period PACKET PERIOD set period of a specific packet. Only effective\n"
+        << "                    if periodic-packet-type is set to EP. PERIOD is a number of\n"
+        << "                    periods as set by periodic-packet-rate. For instance, if\n"
+        << "                    periodic-packet-rate is 10 and PERIOD is 10, the actual\n"
+        << "                    packet period is 1s (100ms base period * 10)\n"
         << "  set-rate RATE     change the baud rate. The new rate will be effective\n"
         << "                    only after a save-config and a reset\n"
         << "  save-config       save the current configuration to flash\n"
@@ -231,6 +236,19 @@ int main(int argc, char** argv)
         }
         driver.writeUsedSensors(mag, gps, gps_course);
     }
+    else if (cmd == "set-period") {
+        if (argc != 5) {
+            cerr << "set-period expects PACKET and PERIOD" << endl;
+            return usage();
+        }
+
+        string packet = argv[3];
+        int period = atoi(argv[4]);
+
+        driver.openURI(uri);
+        driver.validateDevice();
+        driver.writeExtendedPeriodMessageConfiguration(packet, period);
+    }
     else if (cmd == "set") {
         if (argc == 3) {
             cout << "Valid parameters: ";
@@ -275,6 +293,24 @@ int main(int argc, char** argv)
             throw std::invalid_argument("do not know how to set parameter " + param_name);
         }
     }
+    else if (cmd == "show-packets") {
+        driver.openURI(uri);
+        driver.validateDevice();
+        while(true) {
+            auto updated = driver.processOne();
+            cout << base::Time::now() << " ";
+            if (updated.isUpdated(Driver::UPDATED_RAW_IMU_SENSORS)) {
+                cout << " " << "RAW_IMU_SENSORS";
+            }
+            if (updated.isUpdated(Driver::UPDATED_STATE)) {
+                cout << " " << "STATE";
+            }
+            if (updated.isUpdated(Driver::UPDATED_STATUS)) {
+                cout << " " << "STATUS";
+            }
+            cout << std::endl;
+        }
+    }
     else if (cmd == "poll") {
         int poll_period_usec = 100000;
         if (argc == 4) {
@@ -285,15 +321,16 @@ int main(int argc, char** argv)
         driver.validateDevice();
         driver.writePeriodicPacketConfiguration("e3", 10);
         while(true) {
-            auto state = driver.pollEKFWithCovariance();
-            std::cout << state.rbs.time
-                      << " " << state.filter_state.toString()
-                      << fixed
-                      << " " << setprecision(1) << base::getRoll(state.rbs.orientation) * 180 / M_PI << " "
-                      << " " << setprecision(1) << base::getPitch(state.rbs.orientation) * 180 / M_PI << " "
-                      << " " << setprecision(1) << base::getYaw(state.rbs.orientation) * 180 / M_PI
-                      << std::endl;
-
+            if (driver.processOne().isUpdated(Driver::UPDATED_STATE)) {
+                auto state = driver.getState();
+                std::cout << state.rbs.time
+                        << " " << state.filter_state.toString()
+                        << fixed
+                        << " " << setprecision(1) << base::getRoll(state.rbs.orientation) * 180 / M_PI << " "
+                        << " " << setprecision(1) << base::getPitch(state.rbs.orientation) * 180 / M_PI << " "
+                        << " " << setprecision(1) << base::getYaw(state.rbs.orientation) * 180 / M_PI
+                        << std::endl;
+            }
 
             usleep(poll_period_usec);
         }

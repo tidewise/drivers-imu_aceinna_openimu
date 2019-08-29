@@ -85,6 +85,8 @@ different payload.
 | 10 | float[2] | Hard iron X and Y |
 | 11 | float[2] | Soft iron ratio and angle |
 | 12 | int64_t | Enabled sensors |
+| 20 | char[8] | Packet periods (messages 0 to 7) |
+| 28 | char[8] | Packet periods (messages 8 to 15) |
 
 Orientation specifies the forward, right and down axis, encoded with a sign (+ or -)
 and an axis name (X, Y, Z). For instance, "+X-Y-Z" would mean:
@@ -461,6 +463,29 @@ Status byte (least significant to most significant):
 ## i1 - Periodic Information Message
 
 Same as reply to the gS message
+
+## EP - Extended periodic packets
+
+This is a multiplexing of different packet periods. To use the EP packet,
+you have to set the periodic packet type to EP and then set the desired
+packet periods in the `Packet Periods` fields of the configuration structure.
+
+The period values are in multiples of the EP periodic packet period. For
+instance, if the EP packet period is 40 ms (configured rate == 25),
+a packet period of 4 means an actual period of 100ms.
+
+The mapping from message to message ID is as follows
+
+| Index | Packet Type |
+|-------|-------------|
+| 2     | z1 |
+| 3     | a1 |
+| 4     | a2 |
+| 5     | s1 |
+| 6     | e1 |
+| 7     | e2 |
+| 8     | e3 |
+| 9     | i1 |
 
 ## JI - Jump to Bootloader
 

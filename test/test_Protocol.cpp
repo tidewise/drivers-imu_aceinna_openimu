@@ -6,6 +6,15 @@ using namespace std;
 using namespace imu_aceinna_openimu::protocol;
 using testing::ElementsAre;
 
+#define ASSERT_THROW_MESSAGE(code, exception, message) \
+    ASSERT_THROW({ \
+        try { code; } \
+        catch(exception& e) { \
+            ASSERT_EQ(message, string(e.what())); \
+            throw; \
+        } \
+    }, exception)
+
 struct ProtocolTest : public ::testing::Test {
     std::vector<uint8_t> buffer;
 
@@ -255,4 +264,46 @@ TEST_F(ProtocolTest, it_formats_a_firmware_block_write_message) {
     ASSERT_THAT(std::vector<uint8_t>(&packet[0], packetEnd),
         ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'W', 'A', 9,
                     0x10, 0x20, 0x30, 0x40, 4, 1, 2, 3, 4, 0x6d, 0xad));
+}
+
+vector<uint8_t> make_byte_sequence(int size) {
+    vector<uint8_t> bytes;
+    bytes.resize(size);
+    for (int i = 0; i < size; ++i) {
+        bytes[i] = i;
+    }
+    return bytes;
+}
+
+TEST_F(ProtocolTest, it_parses_a_status_message) {
+    vector<uint8_t> payload(make_byte_sequence(34));
+    payload[33] = 0x2c;
+    auto status = parseStatus(&payload[0], payload.size());
+    ASSERT_EQ(0x03020100, status.time.toMilliseconds());
+    ASSERT_EQ(0x07060504, status.extended_periodic_packets_overflow);
+    ASSERT_EQ(0x0b0a0908, status.gps_updates);
+    ASSERT_EQ(0x0f0e0d0c, status.last_gps_message.toMilliseconds());
+    ASSERT_EQ(0x13121110, status.last_good_gps.toMilliseconds());
+    ASSERT_EQ(0x17161514, status.last_usable_gps_velocity.toMilliseconds());
+    ASSERT_EQ(0x1b1a1918, status.gps_rx);
+    ASSERT_EQ(0x1d1c, status.gps_overflows);
+    ASSERT_EQ(0x1f1e, round(status.hdop * 10));
+    ASSERT_EQ(0x20, round(status.temperature.getCelsius()));
+
+    ASSERT_EQ(4, status.filter_state.mode);
+    ASSERT_EQ(0x5, status.filter_state.status);
+}
+
+TEST_F(ProtocolTest, it_throws_if_the_payload_buffer_is_smaller_than_the_expected_status_size) {
+    vector<uint8_t> payload;
+    payload.resize(33);
+    ASSERT_THROW_MESSAGE(parseStatus(&payload[0], payload.size()),
+                         std::invalid_argument, "buffer too small");
+}
+
+TEST_F(ProtocolTest, it_throws_if_the_payload_buffer_is_bigger_than_the_expected_status_size) {
+    vector<uint8_t> payload;
+    payload.resize(35);
+    ASSERT_THROW_MESSAGE(parseStatus(&payload[0], payload.size()),
+                         std::invalid_argument, "received status structure bigger than expected");
 }
