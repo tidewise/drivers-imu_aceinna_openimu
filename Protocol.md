@@ -148,6 +148,37 @@ Used sensors configuration:
 |--------|--------|--------------------------|
 | 0 | string | User version |
 
+## gS - Get Status
+
+### Query
+
+- No payload
+
+### Reply
+
+| Offset | Type   | Description |
+|--------|--------|--------------------------|
+| 0 | uint32 | GPS time of week (ms) |
+| 4 | uint32 | Extended periodic packet overflows |
+| 8 | uint32 | GPS update count |
+| 12 | uint32 | time at last valid GPS message (ms) |
+| 16 | uint32 | time at last valid GPS position (ms) |
+| 20 | uint32 | time at last valid GPS velocity (ms) |
+| 24 | uint32 | number of bytes received on the GPS UART |
+| 28 | uint16 | number of overflows while parsing the GPS UART |
+| 30 | uint16 | HDOP (0.1 scaling) |
+| 32 | uint8  | temperature (C) |
+| 33 | uint8  | flags |
+
+Flags format (least significant to most significant):
+
+| Length (bit) | Description |
+|--------------|-------------|
+| 3 | Algorithm state (see beginning of section) |
+| 1 | Still switch |
+| 1 | Turn switch |
+| 1 | Course is used as heading |
+
 ## gA - Get all configuration
 
 ### Query
@@ -401,13 +432,14 @@ Data packets are only available as periodic packets.
 | 132 | float | Position covariance D (m^2) |
 | 136 | uint8 | Status byte |
 
-Status byte:
+Status byte (least significant to most significant):
 
 | Length (bit) | Description |
 |--------------|-------------|
 | 3 | Algorithm state (see beginning of section) |
 | 1 | Still switch |
 | 1 | Turn switch |
+| 1 | Course is used as heading |
 
 ## s1 - IMU Scaled Sensors
 
@@ -425,6 +457,10 @@ Status byte:
 | 40 | float | Magnetic field Y (Gauss) |
 | 44 | float | Magnetic field Z (Gauss) |
 | 48 | float | Degrees (C) |
+
+## i1 - Periodic Information Message
+
+Same as reply to the gS message
 
 ## JI - Jump to Bootloader
 
