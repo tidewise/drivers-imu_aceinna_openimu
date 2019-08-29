@@ -162,12 +162,16 @@ int main(int argc, char** argv)
                 << "\n"
                 << "Status\n"
                 << "  Time: " << status.time << "\n"
+                << "  Extended periodic packet overflow: " << status.extended_periodic_packets_overflow << "\n"
+                << "  Count of received GPS updates: " << status.gps_updates << "\n"
                 << "  Last GPS message received at: " << status.last_gps_message << "\n"
                 << "  Last good GPS received at: " << status.last_good_gps << "\n"
                 << "  Last usable GPS velocity at: " << status.last_usable_gps_velocity << "\n"
                 << "  Bytes received on GPS UART: " << status.gps_rx << "\n"
                 << "  Overflows on GPS UART: " << status.gps_overflows << "\n"
                 << "  Temperature: " << status.temperature.getCelsius() << " C\n"
+                << "  HDOP: " << setprecision(1) << status.hdop << "\n"
+                << "  Filter State: " << status.filter_state.toString() << "\n"
                 << flush;
         }
         return 0;

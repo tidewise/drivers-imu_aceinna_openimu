@@ -357,21 +357,33 @@ uint8_t* protocol::queryStatus(uint8_t* buffer)
     return formatPacket(buffer, "gS", nullptr, 0);
 }
 
+FilterState status_byte2filter_state(uint8_t status_byte) {
+    FilterState state;
+    state.mode = static_cast<FilterMode>(status_byte & 0x7);
+    state.status = status_byte >> 3;
+    return state;
+}
+
 Status protocol::parseStatus(uint8_t const* buffer, int size)
 {
     uint8_t const* end = buffer + size;
     uint8_t const* cursor = buffer;
 
-    uint32_t time, last_gps_message, last_gps, last_gps_velocity, gps_rx;
-    uint16_t gps_overflows;
-    uint8_t temperature_C;
+    uint32_t time, ext_periodic_overflow, gps_updates, last_gps_message,
+             last_gps, last_gps_velocity, gps_rx;
+    uint16_t gps_overflows, hdop;
+    uint8_t temperature_C, status_byte;
     cursor = endianness::decode(cursor, time, end);
+    cursor = endianness::decode(cursor, ext_periodic_overflow, end);
+    cursor = endianness::decode(cursor, gps_updates, end);
     cursor = endianness::decode(cursor, last_gps_message, end);
     cursor = endianness::decode(cursor, last_gps, end);
     cursor = endianness::decode(cursor, last_gps_velocity, end);
     cursor = endianness::decode(cursor, gps_rx, end);
     cursor = endianness::decode(cursor, gps_overflows, end);
+    cursor = endianness::decode(cursor, hdop, end);
     cursor = endianness::decode(cursor, temperature_C, end);
+    cursor = endianness::decode(cursor, status_byte, end);
 
     if (cursor != end) {
         throw std::invalid_argument("received status structure bigger than expected");
@@ -379,12 +391,16 @@ Status protocol::parseStatus(uint8_t const* buffer, int size)
 
     Status ret;
     ret.time = base::Time::fromMilliseconds(time);
+    ret.extended_periodic_packets_overflow = ext_periodic_overflow;
+    ret.gps_updates = gps_updates;
     ret.gps_rx = gps_rx;
     ret.gps_overflows = gps_overflows;
     ret.last_gps_message = base::Time::fromMilliseconds(last_gps_message);
     ret.last_good_gps = base::Time::fromMilliseconds(last_gps);
     ret.last_usable_gps_velocity = base::Time::fromMilliseconds(last_gps_velocity);
+    ret.hdop = static_cast<float>(hdop) / 10;
     ret.temperature = base::Temperature::fromCelsius(temperature_C);
+    ret.filter_state = status_byte2filter_state(status_byte);
     return ret;
 }
 
@@ -432,9 +448,7 @@ EKFWithCovariance protocol::parseEKFWithCovariance(uint8_t const* buffer, int bu
         values[5] * deg2rad_square
     );
 
-    FilterState state;
-    state.mode = static_cast<FilterMode>(status_byte & 0x7);
-    state.status = status_byte >> 3;
+    FilterState state = status_byte2filter_state(status_byte);
 
     rba.acceleration = Eigen::Vector3d(values[6], values[7], values[8]);
     rba.cov_acceleration = Eigen::DiagonalMatrix<double, 3>(
