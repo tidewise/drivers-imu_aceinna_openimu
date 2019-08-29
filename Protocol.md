@@ -241,18 +241,9 @@ Loads defaults to memory and save them to flash
 
 # Data packets
 
-Data packets are accessed in two ways. The first way is to set the periodic packet
-type and periodic packet rate, and listen for the generated packets. The second way
-is to use the 'mg' packet.
-
+Data packets are only available as periodic packets.
 
 ## z1 - Scaled 9-axis IMU packet
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
@@ -269,12 +260,6 @@ is to use the 'mg' packet.
 
 ## z3 - Scaled 6-axis IMU packet
 
-### Query
-
-- No payload
-
-### Reply
-
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
 | 0 | uint32 | Time in milliseconds |
@@ -286,12 +271,6 @@ is to use the 'mg' packet.
 | 24 | float | Angular velocity around Z (rad/s) |
 
 ## a1 - VG Output Message with Flags
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
@@ -312,12 +291,6 @@ is to use the 'mg' packet.
 
 ## a2 - VG Output Message without Flags
 
-### Query
-
-- No payload
-
-### Reply
-
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
 | 0 | uint32 | Time in milliseconds |
@@ -333,12 +306,6 @@ is to use the 'mg' packet.
 | 44 | float | Acceleration along Z (m/s/s) |
 
 ## e1 - VG/AHRS Output Message
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
@@ -364,12 +331,6 @@ is to use the 'mg' packet.
 | 68 | uint8 | turnSw |
 
 ## e2 - INS Output Message
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
@@ -404,12 +365,6 @@ is to use the 'mg' packet.
 | 122 | uint8 | turnSw |
 
 ## e3 - INS Output Message with Covariances
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
@@ -455,12 +410,6 @@ Status byte:
 | 1 | Turn switch |
 
 ## s1 - IMU Scaled Sensors
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
