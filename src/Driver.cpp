@@ -34,6 +34,8 @@ int Driver::readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* com
         auto now = base::Time::now();
         auto singleReadTimeout = now < deadline ? deadline - now : base::Time();
         int packetSize = readPacket(buffer, bufferSize, singleReadTimeout);
+        if (buffer[2] == 0 && buffer[3] == 0)
+            throw std::invalid_argument("IMU reports an invalid packet");
         if (buffer[2] == command[0] && buffer[3] == command[1])
             return packetSize;
     }

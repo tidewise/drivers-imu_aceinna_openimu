@@ -61,10 +61,16 @@ The firmware supports having a single periodic packet, that is configured
 through the Periodic Packet Type and Periodic Packet Rate configuration
 parameters.
 
+We introduced the EP periodic packet to make this mechanism more flexible. See
+EP packet documentation for more details.
+
 All other interactions with the unit is using reply/request pairs. The
 response is always of the same type than the request. For instance, a pG
 packet sent to the unit will be answered with a pG packet, only with a
 different payload.
+
+If an invalid/unknown packet type is sent to the unit, it replies with
+a packet type of 0x00 0x00.
 
 # Configuration Packets
 
