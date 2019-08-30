@@ -5,6 +5,7 @@
 using namespace std;
 using namespace imu_aceinna_openimu::protocol;
 using testing::ElementsAre;
+using testing::ElementsAreArray;
 
 #define ASSERT_THROW_MESSAGE(code, exception, message) \
     ASSERT_THROW({ \
@@ -135,11 +136,14 @@ TEST_F(ProtocolTest, it_formats_a_configuration_write_for_an_integer_type) {
     int16_t value = 0x1020;
     auto packetEnd = writeConfiguration<int64_t>(&buffer[0], 2, value);
 
+    uint8_t expected[] = {
+        PACKET_START_MARKER, PACKET_START_MARKER, 'u', 'P', 12,
+        2, 0, 0, 0,
+        0x20, 0x10, 0, 0, 0, 0, 0, 0,
+        0xA2, 0x73
+    };
     ASSERT_THAT(std::vector<uint8_t>(&buffer[0], packetEnd),
-        ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'u', 'P', 12,
-                    2, 0, 0, 0,
-                    0x20, 0x10, 0, 0, 0, 0, 0, 0,
-                    0xA2, 0x73));
+        ElementsAreArray(expected));
 }
 
 TEST_F(ProtocolTest, it_formats_a_configuration_write_for_a_string) {
@@ -147,11 +151,14 @@ TEST_F(ProtocolTest, it_formats_a_configuration_write_for_a_string) {
     string value = "abcdefgh";
     auto packetEnd = writeConfiguration(&buffer[0], 2, value);
 
+    uint8_t expected[] = {
+        PACKET_START_MARKER, PACKET_START_MARKER, 'u', 'P', 12,
+        2, 0, 0, 0,
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+        0x45, 0x9f
+    };
     ASSERT_THAT(std::vector<uint8_t>(&buffer[0], packetEnd),
-        ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'u', 'P', 12,
-                    2, 0, 0, 0,
-                    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
-                    0x45, 0x9f));
+        ElementsAreArray(expected));
 }
 
 TEST_F(ProtocolTest, it_pads_a_string_smaller_than_8_bytes_with_zeros) {
@@ -159,11 +166,15 @@ TEST_F(ProtocolTest, it_pads_a_string_smaller_than_8_bytes_with_zeros) {
     string value = "abcde";
     auto packetEnd = writeConfiguration(&buffer[0], 2, value);
 
+    uint8_t expected[] = {
+        PACKET_START_MARKER, PACKET_START_MARKER, 'u', 'P', 12,
+        2, 0, 0, 0,
+        'a', 'b', 'c', 'd', 'e', 0, 0, 0,
+        0x13, 0x47
+    };
+
     ASSERT_THAT(std::vector<uint8_t>(&buffer[0], packetEnd),
-        ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'u', 'P', 12,
-                    2, 0, 0, 0,
-                    'a', 'b', 'c', 'd', 'e', 0, 0, 0,
-                    0x13, 0x47));
+        ElementsAreArray(expected));
 }
 
 TEST_F(ProtocolTest, it_throws_if_the_string_is_longer_than_8_bytes) {
@@ -181,20 +192,28 @@ TEST_F(ProtocolTest, it_formats_a_configuration_write_for_an_orientation) {
     };
     auto packetEnd = writeConfiguration(&buffer[0], 2, value);
 
+    uint8_t expected[] = {
+        PACKET_START_MARKER, PACKET_START_MARKER, 'u', 'P', 12,
+        2, 0, 0, 0,
+        '+', 'Y', '-', 'X', '-', 'Z',0,0,
+        0x79, 0x6f
+    };
+
     ASSERT_THAT(std::vector<uint8_t>(&buffer[0], packetEnd),
-        ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'u', 'P', 12,
-                    2, 0, 0, 0,
-                    '+', 'Y', '-', 'X', '-', 'Z',0,0,
-                    0x79, 0x6f));
+        ElementsAreArray(expected));
 }
 
 TEST_F(ProtocolTest, it_queries_a_single_parameter) {
     std::vector<uint8_t> buffer(MAX_PACKET_SIZE, 0);
     auto packetEnd = queryConfigurationParameter(&buffer[0], 2);
 
+    uint8_t expected[] = {
+        PACKET_START_MARKER, PACKET_START_MARKER, 'g', 'P', 4,
+        2, 0, 0, 0, 0xA6, 0xD6
+    };
+
     ASSERT_THAT(std::vector<uint8_t>(&buffer[0], packetEnd),
-        ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'g', 'P', 4,
-                    2, 0, 0, 0, 0xA6, 0xD6));
+        ElementsAreArray(expected));
 }
 
 TEST_F(ProtocolTest, it_parses_a_single_integer_parameter) {
