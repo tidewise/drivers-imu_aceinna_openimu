@@ -280,9 +280,12 @@ TEST_F(ProtocolTest, it_formats_a_firmware_block_write_message) {
 
     auto packetEnd = queryAppBlockWrite(&packet[0], 0x10203040, &block[0], 4);
 
+    uint8_t expected[] = {
+        PACKET_START_MARKER, PACKET_START_MARKER, 'W', 'A', 9,
+        0x10, 0x20, 0x30, 0x40, 4, 1, 2, 3, 4, 0x6d, 0xad
+    };
     ASSERT_THAT(std::vector<uint8_t>(&packet[0], packetEnd),
-        ElementsAre(PACKET_START_MARKER, PACKET_START_MARKER, 'W', 'A', 9,
-                    0x10, 0x20, 0x30, 0x40, 4, 1, 2, 3, 4, 0x6d, 0xad));
+        ElementsAreArray(expected));
 }
 
 vector<uint8_t> make_byte_sequence(int size) {

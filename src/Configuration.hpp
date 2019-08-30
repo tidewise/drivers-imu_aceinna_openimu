@@ -30,6 +30,9 @@ namespace imu_aceinna_openimu {
             ORIENTATION_AXIS right = ORIENTATION_AXIS_PLUS_Y;
             ORIENTATION_AXIS down = ORIENTATION_AXIS_PLUS_Z;
 
+            Orientation();
+            Orientation(ORIENTATION_AXIS forward, ORIENTATION_AXIS right, ORIENTATION_AXIS down);
+
             bool operator ==(Orientation const& other) const;
             bool operator !=(Orientation const& other) const;
         };

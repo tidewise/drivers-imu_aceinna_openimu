@@ -17,6 +17,14 @@ static string axisToUser(ORIENTATION_AXIS axis) {
     }
 }
 
+Configuration::Orientation::Orientation() {
+}
+Configuration::Orientation::Orientation(ORIENTATION_AXIS forward, ORIENTATION_AXIS right, ORIENTATION_AXIS down)
+    : forward(forward)
+    , right(right)
+    , down(down) {
+}
+
 bool Configuration::Orientation::operator ==(Orientation const& other) const
 {
     return forward == other.forward &&
