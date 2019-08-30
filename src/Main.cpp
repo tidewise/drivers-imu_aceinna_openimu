@@ -274,8 +274,8 @@ int main(int argc, char** argv)
         driver.openURI(uri);
         driver.validateDevice();
         if (param_name == "gps-protocol") {
-            int64_t protocol = gpsProtocolFromString(param_value);
-            driver.writeConfiguration(definition->index, protocol, true);
+            GPSProtocol protocol = gpsProtocolFromString(param_value);
+            driver.writeGPSProtocol(protocol);
         }
         else if (definition->type == PARAM_INTEGER) {
             int64_t written_value = std::stoll(param_value);

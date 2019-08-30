@@ -258,6 +258,26 @@ void Driver::writeUsedSensors(bool magnetometers, bool gps, bool gps_course_as_h
     writeConfiguration<int64_t>(12, field);
 }
 
+void Driver::writeAccelerationLowPassFilter(int64_t rate)
+{
+    writeConfiguration<int64_t>(5, rate);
+}
+
+void Driver::writeAngularVelocityLowPassFilter(int64_t rate)
+{
+    writeConfiguration<int64_t>(6, rate);
+}
+
+void Driver::writeGPSBaudrate(int baudrate)
+{
+    writeConfiguration<int64_t>(8, baudrate);
+}
+
+void Driver::writeGPSProtocol(GPSProtocol protocol)
+{
+    writeConfiguration<int64_t>(9, protocol);
+}
+
 int Driver::extractPacket(uint8_t const* buffer, size_t bufferSize) const
 {
     return protocol::extractPacket(buffer, bufferSize);

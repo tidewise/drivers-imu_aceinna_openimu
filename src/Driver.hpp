@@ -112,6 +112,28 @@ namespace imu_aceinna_openimu {
         /** Configure message periods in extended packet period mode (EP) */
         void writeExtendedPeriodMessageConfiguration(int index, int period);
 
+        /**
+         * Configure the cutoff frequency for the acceleration low-pass filter
+         * (Hz)
+         *
+         * @param rate the cutoff frequency. Can be 0, 2, 5, 10, 20, 25
+         */
+        void writeAccelerationLowPassFilter(int64_t rate);
+
+        /**
+         * Configure the cutoff frequency for the angular velocity low-pass
+         * filter (Hz)
+         *
+         * @param rate the cutoff frequency. Can be 0, 2, 5, 10, 20, 25
+         */
+        void writeAngularVelocityLowPassFilter(int64_t rate);
+
+        /** Configure the GPS protocol */
+        void writeGPSProtocol(GPSProtocol protocol);
+
+        /** Configure the GPS baud rate */
+        void writeGPSBaudrate(int baudrate);
+
         /** Save the configuration to flash */
         void saveConfiguration();
 
