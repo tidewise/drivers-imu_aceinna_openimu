@@ -9,7 +9,7 @@ of the AceINNA-distributed INS app. The whole protocol is documented in
 
 The driver will by default refuse to open a device that is not running this
 firmware. Copies of the firmware are available in firmwares/ as well as on
-GitHub (https://github.com/tidewise/firmware-openimu)
+GitHub (https://github.com/tidewise/firmwares-imu_aceinna_openimu)
 
 While it is part of the Rock project, this driver is pure CMake and C++ code. It can
 be reused on non-Rock environments provided that you also install its dependencies.
