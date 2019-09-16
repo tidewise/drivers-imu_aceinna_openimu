@@ -34,6 +34,8 @@ int Driver::readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* com
         auto now = base::Time::now();
         auto singleReadTimeout = now < deadline ? deadline - now : base::Time();
         int packetSize = readPacket(buffer, bufferSize, singleReadTimeout);
+        if (buffer[2] == 0 && buffer[3] == 0)
+            throw std::invalid_argument("IMU reports an invalid packet");
         if (buffer[2] == command[0] && buffer[3] == command[1])
             return packetSize;
     }
@@ -130,6 +132,45 @@ void Driver::queryRestoreDefaultConfiguration() {
     std::cout << "response size: " << packetSize << std::endl;
 }
 
+struct PeriodicMessage {
+    char const* name;
+    int index;
+};
+
+static const PeriodicMessage PERIODIC_MESSAGES[] = {
+    { "z1", 2 },
+    { "e3", 8 },
+    { "i1", 9 }
+};
+
+static PeriodicMessage const* findPeriodicMessage(string name) {
+    for (auto const& p : PERIODIC_MESSAGES) {
+        if (p.name == name) {
+            return &p;
+        }
+    }
+    return nullptr;
+}
+
+void Driver::writeExtendedPeriodMessageConfiguration(string name, int period)
+{
+    auto msg = findPeriodicMessage(name);
+    if (!msg) {
+        throw std::invalid_argument("unknown periodic message " + name);
+    }
+
+    return writeExtendedPeriodMessageConfiguration(msg->index, period);
+}
+
+void Driver::writeExtendedPeriodMessageConfiguration(int index, int period)
+{
+    uint8_t paramIndex = 15 + index / 8;
+    string current = readConfiguration<string>(paramIndex);
+    uint8_t offset = index % 8;
+    current.at(offset) = period;
+    writeConfiguration(paramIndex, current, true);
+}
+
 template <typename T>
 void Driver::writeConfiguration(int index, T value, bool validate)
 {
@@ -219,6 +260,26 @@ void Driver::writeUsedSensors(bool magnetometers, bool gps, bool gps_course_as_h
     writeConfiguration<int64_t>(12, field);
 }
 
+void Driver::writeAccelerationLowPassFilter(int64_t rate)
+{
+    writeConfiguration<int64_t>(5, rate);
+}
+
+void Driver::writeAngularVelocityLowPassFilter(int64_t rate)
+{
+    writeConfiguration<int64_t>(6, rate);
+}
+
+void Driver::writeGPSBaudrate(int baudrate)
+{
+    writeConfiguration<int64_t>(8, baudrate);
+}
+
+void Driver::writeGPSProtocol(GPSProtocol protocol)
+{
+    writeConfiguration<int64_t>(9, protocol);
+}
+
 int Driver::extractPacket(uint8_t const* buffer, size_t bufferSize) const
 {
     return protocol::extractPacket(buffer, bufferSize);
@@ -256,30 +317,69 @@ void Driver::writeFirmware(std::vector<uint8_t> const& bin, std::ostream& progre
     }
 }
 
-Driver::UpdateType Driver::processOne() {
+void Driver::UpdateResult::add(UpdateType type) {
+    if (type != UPDATED_IGNORED) {
+        updated |= type;
+    }
+}
+bool Driver::UpdateResult::isUpdated(UpdateType type) const {
+    return updated & type;
+}
+
+Driver::UpdateResult Driver::processOne() {
     int packetSize = readPacket(mReadBuffer, BUFFER_SIZE);
+    UpdateResult result;
 
-    if (mReadBuffer[2] == 'e' && mReadBuffer[3] == '3') {
-        mState = protocol::parseEKFWithCovariance(
-            mReadBuffer + protocol::PAYLOAD_OFFSET,
-            packetSize - protocol::PACKET_OVERHEAD);
+    if (mReadBuffer[2] == 'E' && mReadBuffer[3] == 'P') {
+        uint8_t const* payload = mReadBuffer + protocol::PAYLOAD_OFFSET;
+        uint8_t payloadLen = packetSize - protocol::PACKET_OVERHEAD;
+        uint8_t offset = 0;
+        while (offset != payloadLen) {
+            if (offset + 3 > payloadLen) {
+                throw std::invalid_argument("EP: payload too small for embedded message");
+            }
 
+            uint8_t len = payload[offset + 2];
+            if (offset + 3 + len > payloadLen) {
+                throw std::invalid_argument("EP: payload too small for embedded message");
+            }
+
+            auto update = processOne(
+                payload + offset,
+                payload + offset + 3, len);
+            result.add(update);
+
+            offset += len + 3;
+        }
+    }
+    else {
+        auto update = processOne(mReadBuffer + 2,
+                                 mReadBuffer + protocol::PAYLOAD_OFFSET,
+                                 packetSize - protocol::PACKET_OVERHEAD);
+        result.add(update);
+    }
+
+    return result;
+}
+
+Driver::UpdateType Driver::processOne(uint8_t const* type, uint8_t const* payload, uint8_t payloadLen) {
+    if (type[0] == 'e' && type[1] == '3') {
+        mEKFWithCovariance = protocol::parseEKFWithCovariance(payload, payloadLen);
         return UPDATED_STATE;
+    }
+    else if (type[0] == 'i' && type[1] == '1') {
+        mStatus = protocol::parseStatus(payload, payloadLen);
+        return UPDATED_STATUS;
     }
     return UPDATED_IGNORED;
 }
 
 EKFWithCovariance Driver::getState() const
 {
-    return mState;
+    return mEKFWithCovariance;
 }
 
-EKFWithCovariance Driver::pollEKFWithCovariance()
+Status Driver::getIMUStatus() const
 {
-    uint8_t code[2] = { 'e', '3' };
-    size_t packetSize =
-        readPacketsUntil(mReadBuffer, BUFFER_SIZE, code);
-    return protocol::parseEKFWithCovariance(
-        mReadBuffer + protocol::PAYLOAD_OFFSET,
-        packetSize - protocol::PACKET_OVERHEAD);
+    return mStatus;
 }

@@ -4,7 +4,7 @@
 #include <string>
 
 namespace imu_aceinna_openimu {
-    enum ORIENTATION_AXIS {
+    enum OrientationAxis {
         ORIENTATION_AXIS_PLUS_X,
         ORIENTATION_AXIS_MINUS_X,
         ORIENTATION_AXIS_PLUS_Y,
@@ -26,9 +26,12 @@ namespace imu_aceinna_openimu {
 
     struct Configuration {
         struct Orientation {
-            ORIENTATION_AXIS forward = ORIENTATION_AXIS_PLUS_X;
-            ORIENTATION_AXIS right = ORIENTATION_AXIS_PLUS_Y;
-            ORIENTATION_AXIS down = ORIENTATION_AXIS_PLUS_Z;
+            OrientationAxis forward = ORIENTATION_AXIS_PLUS_X;
+            OrientationAxis right = ORIENTATION_AXIS_PLUS_Y;
+            OrientationAxis down = ORIENTATION_AXIS_PLUS_Z;
+
+            Orientation();
+            Orientation(OrientationAxis forward, OrientationAxis right, OrientationAxis down);
 
             bool operator ==(Orientation const& other) const;
             bool operator !=(Orientation const& other) const;

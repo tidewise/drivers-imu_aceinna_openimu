@@ -61,10 +61,16 @@ The firmware supports having a single periodic packet, that is configured
 through the Periodic Packet Type and Periodic Packet Rate configuration
 parameters.
 
+We introduced the EP periodic packet to make this mechanism more flexible. See
+EP packet documentation for more details.
+
 All other interactions with the unit is using reply/request pairs. The
 response is always of the same type than the request. For instance, a pG
 packet sent to the unit will be answered with a pG packet, only with a
 different payload.
+
+If an invalid/unknown packet type is sent to the unit, it replies with
+a packet type of 0x00 0x00.
 
 # Configuration Packets
 
@@ -85,6 +91,8 @@ different payload.
 | 10 | float[2] | Hard iron X and Y |
 | 11 | float[2] | Soft iron ratio and angle |
 | 12 | int64_t | Enabled sensors |
+| 20 | char[8] | Packet periods (messages 0 to 7) |
+| 28 | char[8] | Packet periods (messages 8 to 15) |
 
 Orientation specifies the forward, right and down axis, encoded with a sign (+ or -)
 and an axis name (X, Y, Z). For instance, "+X-Y-Z" would mean:
@@ -147,6 +155,37 @@ Used sensors configuration:
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
 | 0 | string | User version |
+
+## gS - Get Status
+
+### Query
+
+- No payload
+
+### Reply
+
+| Offset | Type   | Description |
+|--------|--------|--------------------------|
+| 0 | uint32 | GPS time of week (ms) |
+| 4 | uint32 | Extended periodic packet overflows |
+| 8 | uint32 | GPS update count |
+| 12 | uint32 | time at last valid GPS message (ms) |
+| 16 | uint32 | time at last valid GPS position (ms) |
+| 20 | uint32 | time at last valid GPS velocity (ms) |
+| 24 | uint32 | number of bytes received on the GPS UART |
+| 28 | uint16 | number of overflows while parsing the GPS UART |
+| 30 | uint16 | HDOP (0.1 scaling) |
+| 32 | uint8  | temperature (C) |
+| 33 | uint8  | flags |
+
+Flags format (least significant to most significant):
+
+| Length (bit) | Description |
+|--------------|-------------|
+| 3 | Algorithm state (see beginning of section) |
+| 1 | Still switch |
+| 1 | Turn switch |
+| 1 | Course is used as heading |
 
 ## gA - Get all configuration
 
@@ -241,18 +280,9 @@ Loads defaults to memory and save them to flash
 
 # Data packets
 
-Data packets are accessed in two ways. The first way is to set the periodic packet
-type and periodic packet rate, and listen for the generated packets. The second way
-is to use the 'mg' packet.
-
+Data packets are only available as periodic packets.
 
 ## z1 - Scaled 9-axis IMU packet
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
@@ -269,12 +299,6 @@ is to use the 'mg' packet.
 
 ## z3 - Scaled 6-axis IMU packet
 
-### Query
-
-- No payload
-
-### Reply
-
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
 | 0 | uint32 | Time in milliseconds |
@@ -286,12 +310,6 @@ is to use the 'mg' packet.
 | 24 | float | Angular velocity around Z (rad/s) |
 
 ## a1 - VG Output Message with Flags
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
@@ -312,12 +330,6 @@ is to use the 'mg' packet.
 
 ## a2 - VG Output Message without Flags
 
-### Query
-
-- No payload
-
-### Reply
-
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
 | 0 | uint32 | Time in milliseconds |
@@ -333,12 +345,6 @@ is to use the 'mg' packet.
 | 44 | float | Acceleration along Z (m/s/s) |
 
 ## e1 - VG/AHRS Output Message
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
@@ -364,12 +370,6 @@ is to use the 'mg' packet.
 | 68 | uint8 | turnSw |
 
 ## e2 - INS Output Message
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
@@ -404,12 +404,6 @@ is to use the 'mg' packet.
 | 122 | uint8 | turnSw |
 
 ## e3 - INS Output Message with Covariances
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
@@ -446,21 +440,16 @@ is to use the 'mg' packet.
 | 132 | float | Position covariance D (m^2) |
 | 136 | uint8 | Status byte |
 
-Status byte:
+Status byte (least significant to most significant):
 
 | Length (bit) | Description |
 |--------------|-------------|
 | 3 | Algorithm state (see beginning of section) |
 | 1 | Still switch |
 | 1 | Turn switch |
+| 1 | Course is used as heading |
 
 ## s1 - IMU Scaled Sensors
-
-### Query
-
-- No payload
-
-### Reply
 
 | Offset | Type   | Description |
 |--------|--------|--------------------------|
@@ -476,6 +465,33 @@ Status byte:
 | 40 | float | Magnetic field Y (Gauss) |
 | 44 | float | Magnetic field Z (Gauss) |
 | 48 | float | Degrees (C) |
+
+## i1 - Periodic Information Message
+
+Same as reply to the gS message
+
+## EP - Extended periodic packets
+
+This is a multiplexing of different packet periods. To use the EP packet,
+you have to set the periodic packet type to EP and then set the desired
+packet periods in the `Packet Periods` fields of the configuration structure.
+
+The period values are in multiples of the EP periodic packet period. For
+instance, if the EP packet period is 40 ms (configured rate == 25),
+a packet period of 4 means an actual period of 100ms.
+
+The mapping from message to message ID is as follows
+
+| Index | Packet Type |
+|-------|-------------|
+| 2     | z1 |
+| 3     | a1 |
+| 4     | a2 |
+| 5     | s1 |
+| 6     | e1 |
+| 7     | e2 |
+| 8     | e3 |
+| 9     | i1 |
 
 ## JI - Jump to Bootloader
 

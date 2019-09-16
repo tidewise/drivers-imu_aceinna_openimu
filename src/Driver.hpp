@@ -14,12 +14,22 @@ namespace imu_aceinna_openimu {
     };
 
     class Driver : public iodrivers_base::Driver {
+    public:
+        enum UpdateType
+        {
+            UPDATED_STATE = 1,
+            UPDATED_RAW_IMU_SENSORS = 2,
+            UPDATED_STATUS = 4,
+            UPDATED_IGNORED
+        };
+
     private:
         static const int BUFFER_SIZE = 256 * 15;
         uint8_t mWriteBuffer[BUFFER_SIZE];
         uint8_t mReadBuffer[BUFFER_SIZE];
 
-        EKFWithCovariance mState;
+        Status mStatus;
+        EKFWithCovariance mEKFWithCovariance;
 
         template<typename T>
         void writeConfigurationGeneric(int index, T value, bool validate);
@@ -34,6 +44,11 @@ namespace imu_aceinna_openimu {
 
         /** @overload */
         int readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* command);
+
+        /** Internal processOne implementation that allows to process single messages
+         * as well as EP-multiplexed messages
+         */
+        UpdateType processOne(uint8_t const* type, uint8_t const* message, uint8_t len);
 
     public:
         Driver();
@@ -90,6 +105,35 @@ namespace imu_aceinna_openimu {
         /** Configure which sensors can be used by the algorithm */
         void writeUsedSensors(bool magnetometers, bool gps, bool gps_course_as_heading);
 
+        /** @overload
+         */
+        void writeExtendedPeriodMessageConfiguration(std::string name, int period);
+
+        /** Configure message periods in extended packet period mode (EP) */
+        void writeExtendedPeriodMessageConfiguration(int index, int period);
+
+        /**
+         * Configure the cutoff frequency for the acceleration low-pass filter
+         * (Hz)
+         *
+         * @param rate the cutoff frequency. Can be 0, 2, 5, 10, 20, 25
+         */
+        void writeAccelerationLowPassFilter(int64_t rate);
+
+        /**
+         * Configure the cutoff frequency for the angular velocity low-pass
+         * filter (Hz)
+         *
+         * @param rate the cutoff frequency. Can be 0, 2, 5, 10, 20, 25
+         */
+        void writeAngularVelocityLowPassFilter(int64_t rate);
+
+        /** Configure the GPS protocol */
+        void writeGPSProtocol(GPSProtocol protocol);
+
+        /** Configure the GPS baud rate */
+        void writeGPSBaudrate(int baudrate);
+
         /** Save the configuration to flash */
         void saveConfiguration();
 
@@ -118,21 +162,25 @@ namespace imu_aceinna_openimu {
 
         static std::ostream& nullStream();
 
-        enum UpdateType
+        struct UpdateResult
         {
-            UPDATED_STATE,
-            UPDATED_RAW_IMU_SENSORS,
-            UPDATED_STATUS,
-            UPDATED_IGNORED
+            int updated = 0;
+
+            void add(UpdateType type);
+            bool isUpdated(UpdateType type) const;
         };
 
-        UpdateType processOne();
+        UpdateResult processOne();
 
         /** Return the last state received by processOne
          */
         EKFWithCovariance getState() const;
 
-        EKFWithCovariance pollEKFWithCovariance();
+        /** Return the last IMU status received by processOne
+         *
+         * This is named getIMUStatus() to avoid clashing with iodrivers_base::Driver::getStatus()
+         */
+        Status getIMUStatus() const;
 
         /** Write a new app firmware */
         void writeFirmware(std::vector<uint8_t> const& data,
