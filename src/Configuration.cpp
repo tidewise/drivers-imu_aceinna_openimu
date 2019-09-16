@@ -4,7 +4,7 @@
 using namespace std;
 using namespace imu_aceinna_openimu;
 
-static string axisToUser(ORIENTATION_AXIS axis) {
+static string axisToUser(OrientationAxis axis) {
     switch(axis) {
         case ORIENTATION_AXIS_PLUS_X: return "+X";
         case ORIENTATION_AXIS_MINUS_X: return "-X";
@@ -19,7 +19,7 @@ static string axisToUser(ORIENTATION_AXIS axis) {
 
 Configuration::Orientation::Orientation() {
 }
-Configuration::Orientation::Orientation(ORIENTATION_AXIS forward, ORIENTATION_AXIS right, ORIENTATION_AXIS down)
+Configuration::Orientation::Orientation(OrientationAxis forward, OrientationAxis right, OrientationAxis down)
     : forward(forward)
     , right(right)
     , down(down) {

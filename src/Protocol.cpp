@@ -11,7 +11,7 @@ using namespace std;
 using namespace imu_aceinna_openimu;
 using endianness::decode;
 
-ORIENTATION_AXIS decodeOrientationAxis(string axis) {
+OrientationAxis decodeOrientationAxis(string axis) {
     int result;
     if (axis[1] == 'X') {
         result = ORIENTATION_AXIS_PLUS_X;
@@ -34,7 +34,7 @@ ORIENTATION_AXIS decodeOrientationAxis(string axis) {
         throw std::invalid_argument("unexpected axis direction in '" + axis +
                                     "', expected + or -");
     }
-    return static_cast<ORIENTATION_AXIS>(result);
+    return static_cast<OrientationAxis>(result);
 }
 
 Configuration::Orientation protocol::decodeOrientationString(string orientation)
@@ -46,7 +46,7 @@ Configuration::Orientation protocol::decodeOrientationString(string orientation)
     return ret;
 }
 
-static std::string encodeOrientationAxis(ORIENTATION_AXIS axis) {
+static std::string encodeOrientationAxis(OrientationAxis axis) {
     switch(axis) {
         case ORIENTATION_AXIS_PLUS_X: return "+X";
         case ORIENTATION_AXIS_MINUS_X: return "-X";
