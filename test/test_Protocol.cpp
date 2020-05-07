@@ -10,7 +10,7 @@ using testing::ElementsAreArray;
 #define ASSERT_THROW_MESSAGE(code, exception, message) \
     ASSERT_THROW({ \
         try { code; } \
-        catch(exception& e) { \
+        catch (exception& e) { \
             ASSERT_EQ(message, string(e.what())); \
             throw; \
         } \
@@ -195,7 +195,7 @@ TEST_F(ProtocolTest, it_formats_a_configuration_write_for_an_orientation) {
     uint8_t expected[] = {
         PACKET_START_MARKER, PACKET_START_MARKER, 'u', 'P', 12,
         2, 0, 0, 0,
-        '+', 'Y', '-', 'X', '-', 'Z',0,0,
+        '+', 'Y', '-', 'X', '-', 'Z', 0, 0,
         0x79, 0x6f
     };
 
@@ -239,7 +239,7 @@ TEST_F(ProtocolTest, it_throws_if_the_buffer_is_bigger_than_12_bytes) {
         try {
             parseConfigurationParameter<string>(nullptr, 13, 2);
         }
-        catch(std::invalid_argument const& e) {
+        catch (std::invalid_argument const& e) {
             ASSERT_EQ("unexpected buffer size for gP response, expected 12 but got 13",
                       string(e.what()));
             throw;
@@ -252,7 +252,7 @@ TEST_F(ProtocolTest, it_throws_if_the_buffer_is_smaller_than_12_bytes) {
         try {
             parseConfigurationParameter<string>(nullptr, 11, 2);
         }
-        catch(std::invalid_argument const& e) {
+        catch (std::invalid_argument const& e) {
             ASSERT_EQ("unexpected buffer size for gP response, expected 12 but got 11",
                       string(e.what()));
             throw;
@@ -266,7 +266,7 @@ TEST_F(ProtocolTest, it_throws_if_the_parameter_is_not_the_expected_one) {
         try {
             parseConfigurationParameter<string>(&buffer[0], 12, 3);
         }
-        catch(std::invalid_argument const& e) {
+        catch (std::invalid_argument const& e) {
             ASSERT_EQ("was expecting a read of configuration parameter 3 but got 2",
                       string(e.what()));
             throw;
