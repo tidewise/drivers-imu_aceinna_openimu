@@ -11,6 +11,7 @@ enum ParameterType {
     PARAM_STRING,
     PARAM_INTEGER,
     PARAM_ORIENTATION,
+    PARAM_DOUBLE,
     PARAM_OTHER
 };
 
@@ -29,7 +30,16 @@ static const Parameter PARAMETERS[] = {
     { "orientation", 7, PARAM_ORIENTATION, nullptr },
     { "gps-baudrate", 8, PARAM_INTEGER, nullptr },
     { "gps-protocol", 9, PARAM_OTHER, nullptr },
-    { "filter-config", 14, PARAM_INTEGER, "sum of use-magnetometers(1), use-gps(2) and course-as-heading(4)" },
+    { "hard-iron-x", 10, PARAM_DOUBLE, nullptr },
+    { "hard-iron-y", 11, PARAM_DOUBLE, nullptr },
+    { "soft-iron-ratio", 12, PARAM_DOUBLE, nullptr },
+    { "soft-iron-angle", 13, PARAM_DOUBLE, nullptr },
+    { "lever-arm-x", 14, PARAM_DOUBLE, nullptr },
+    { "lever-arm-y", 15, PARAM_DOUBLE, nullptr },
+    { "lever-arm-z", 16, PARAM_DOUBLE, nullptr },
+    { "point-of-interest-x", 17, PARAM_DOUBLE, nullptr },
+    { "point-of-interest-y", 18, PARAM_DOUBLE, nullptr },
+    { "point-of-interest-z", 19, PARAM_DOUBLE, nullptr },
     { nullptr, 0, PARAM_OTHER }
 };
 
@@ -62,8 +72,7 @@ GPSProtocolDescription GPS_PROTOCOLS[] = {
     { GPS_NOVATEL_BINARY, "novatel-binary" },
     { GPS_NOVATEL_ASCII, "novatel-ascii" },
     { GPS_NMEA0183, "nmea" },
-    { GPS_SIRF_BINARY, "sirf-binary" },
-    { GPS_UBLOX_PVT, "ublox-pvt" }
+    { GPS_SIRF_BINARY, "sirf-binary" }
 };
 
 void gpsDisplayProtocolList(ostream& out) {
@@ -148,7 +157,6 @@ int main(int argc, char** argv)
         }
         else {
             auto conf = driver.readConfiguration();
-            auto status = driver.readStatus();
             cout
                 << "ID: " << info.device_id << "\n"
                 << "App: " << info.app_version << "\n"
@@ -159,95 +167,19 @@ int main(int argc, char** argv)
                 << "Orientation: " << to_string(conf.orientation) << "\n"
                 << "GPS Protocol: " << gpsProtocolToString(conf.gps_protocol) << "\n"
                 << "GPS Baud Rate: " << conf.gps_baud_rate << "\n"
-                << "\n"
-                << "Enabled Sensors:\n"
-                << "  Magnetometers: " << conf.use_magnetometers << "\n"
-                << "  GPS: " << conf.use_gps << "\n"
-                << "  GPS Course as Heading: " << conf.use_gps_course_as_heading << "\n"
-                << "\n"
-                << "Status\n"
-                << "  Time: " << status.time << "\n"
-                << "  Extended periodic packet overflow: " << status.extended_periodic_packets_overflow << "\n"
-                << "  Count of received GPS updates: " << status.gps_updates << "\n"
-                << "  Last GPS message received at: " << status.last_gps_message << "\n"
-                << "  Last good GPS received at: " << status.last_good_gps << "\n"
-                << "  Last usable GPS velocity at: " << status.last_usable_gps_velocity << "\n"
-                << "  Bytes received on GPS UART: " << status.gps_rx << "\n"
-                << "  Overflows on GPS UART: " << status.gps_overflows << "\n"
-                << "  Temperature: " << status.temperature.getCelsius() << " C\n"
-                << "  HDOP: " << setprecision(1) << status.hdop << "\n"
-                << "  Filter State: " << status.filter_state.toString() << "\n"
+                << "Hard Iron: " << conf.hard_iron[0] << " " << conf.hard_iron[1] << "\n"
+                << "Soft Iron: ratio=" << conf.soft_iron_ratio << ", " << conf.soft_iron_angle << "\n"
+                << "Lever Arm: "
+                    << "x=" << conf.lever_arm.x() << ", "
+                    << "y=" << conf.lever_arm.y() << ", "
+                    << "z=" << conf.lever_arm.z() << "\n"
+                << "Point of Interest: "
+                    << "x=" << conf.point_of_interest.x() << ", "
+                    << "y=" << conf.point_of_interest.y() << ", "
+                    << "z=" << conf.point_of_interest.z() << "\n"
                 << flush;
         }
         return 0;
-    }
-    else if (cmd == "poll-status") {
-        int poll_period_usec = 100000;
-        if (argc == 4) {
-            poll_period_usec = atof(argv[3]) * 1000000;
-        }
-
-        driver.openURI(uri);
-        driver.validateDevice();
-        while(true) {
-            auto status = driver.readStatus();
-            cout << status.time << " " << status.last_good_gps << " "
-                 << status.last_usable_gps_velocity << " "
-                 << status.temperature.getCelsius() << " C\n";
-            usleep(poll_period_usec);
-        }
-    }
-    else if (cmd == "sensor") {
-        if (argc == 3) {
-            cout << "Valid sensors: mag gps gps-course" << std::endl;
-            return 0;
-        }
-        else if (argc != 5) {
-            cerr << "sensor expects exactly two more parameters, NAME and ENABLED" << endl;
-            return 1;
-        }
-
-        string sensor = argv[3];
-        string enabled_s = argv[4];
-        if (enabled_s != "on" && enabled_s != "off") {
-            cerr << "ENABLED parameter must be 'on' or 'off'" << endl;
-            return 1;
-        }
-        bool enable = enabled_s == "on";
-
-        driver.openURI(uri);
-        driver.validateDevice();
-        auto conf = driver.readConfiguration();
-        bool mag = conf.use_magnetometers;
-        bool gps = conf.use_gps;
-        bool gps_course = conf.use_gps_course_as_heading;
-        if (sensor == "gps") {
-            gps = enable;
-        }
-        else if (sensor == "mag") {
-            mag = enable;
-        }
-        else if (sensor == "gps-course") {
-            gps_course = enable;
-        }
-        else {
-            cerr << "invalid sensor '" << sensor << "', run without arguments for a list"
-                 << endl;
-        }
-        driver.writeUsedSensors(mag, gps, gps_course);
-    }
-    else if (cmd == "set-period") {
-        if (argc != 5) {
-            cerr << "set-period expects PACKET and PERIOD" << endl;
-            return usage();
-        }
-
-        string packet = argv[3];
-        int period = atoi(argv[4]);
-
-        driver.openURI(uri);
-        driver.validateDevice();
-        driver.writeExtendedPeriodMessageConfiguration(packet, period);
     }
     else if (cmd == "set") {
         if (argc == 3) {
@@ -279,6 +211,10 @@ int main(int argc, char** argv)
         }
         else if (definition->type == PARAM_INTEGER) {
             int64_t written_value = std::stoll(param_value);
+            driver.writeConfiguration(definition->index, written_value, true);
+        }
+        else if (definition->type == PARAM_DOUBLE) {
+            double written_value = std::stod(param_value);
             driver.writeConfiguration(definition->index, written_value, true);
         }
         else if (definition->type == PARAM_ORIENTATION) {
@@ -319,7 +255,7 @@ int main(int argc, char** argv)
 
         driver.openURI(uri);
         driver.validateDevice();
-        driver.writePeriodicPacketConfiguration("e3", 10);
+        driver.writePeriodicPacketConfiguration("e2", 10);
         while(true) {
             if (driver.processOne().isUpdated(Driver::UPDATED_STATE)) {
                 auto state = driver.getState();
@@ -378,6 +314,10 @@ int main(int argc, char** argv)
             << "ID: " << info.device_id << "\n"
             << "App: " << info.app_version << std::endl;
         return 0;
+    }
+    else if (cmd == "to-app") {
+        driver.openURI(uri);
+        driver.toApp();
     }
     else if (cmd == "write-firmware") {
         if (argc != 4) {

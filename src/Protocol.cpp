@@ -200,17 +200,24 @@ Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize
     ret.gps_protocol = static_cast<GPSProtocol>(protocol);
     ret.gps_baud_rate = baudrate;
 
-    // Read but ignore
-    double magneticCalibration[4];
-    for (int i = 0; i < 4; ++i)
-        cursor = decode(cursor, magneticCalibration[i], end);
+    cursor = decode(cursor, ret.hard_iron[0], end);
+    cursor = decode(cursor, ret.hard_iron[1], end);
+    cursor = decode(cursor, ret.soft_iron_ratio, end);
+    cursor = decode(cursor, ret.soft_iron_angle, end);
 
-    // Flags
-    uint64_t sensorsUsed;
-    cursor = decode(cursor, sensorsUsed, end);
-    ret.use_magnetometers = sensorsUsed & 0x1;
-    ret.use_gps = sensorsUsed & 0x2;
-    ret.use_gps_course_as_heading = sensorsUsed & 0x4;
+    double lever_arm[3];
+    for (int i = 0; i < 3; ++i) {
+        cursor = decode(cursor, lever_arm[i], end);
+    }
+    ret.lever_arm = base::Vector3d(lever_arm[0], lever_arm[1], lever_arm[2]);
+
+    double point_of_interest[3];
+    for (int i = 0; i < 3; ++i) {
+        cursor = decode(cursor, point_of_interest[i], end);
+    }
+    ret.point_of_interest = base::Vector3d(
+        point_of_interest[0], point_of_interest[1], point_of_interest[2]
+    );
     return ret;
 }
 
@@ -262,11 +269,27 @@ template<> int64_t protocol::parseConfigurationParameter<int64_t>(
     return value;
 }
 
+template<> double protocol::parseConfigurationParameter<double>(
+    uint8_t* buffer, int bufferSize, int expectedIndex) {
+    validateConfigurationParameter(buffer, bufferSize, expectedIndex);
+    int64_t value;
+    endianness::decode<int64_t>(buffer + 4, value);
+    return reinterpret_cast<double&>(value);
+}
+
 template<>
 uint8_t* protocol::writeConfiguration<int64_t>(uint8_t* buffer, int index, int64_t value) {
     uint8_t payload[12];
     endianness::encode<uint32_t>(payload, index);
     endianness::encode<int64_t>(payload + 4, value);
+    return formatPacket(buffer, "uP", payload, 12);
+}
+
+template<>
+uint8_t* protocol::writeConfiguration<double>(uint8_t* buffer, int index, double value) {
+    uint8_t payload[12];
+    endianness::encode<uint32_t>(payload, index);
+    endianness::encode<int64_t>(payload + 4, reinterpret_cast<int64_t&>(value));
     return formatPacket(buffer, "uP", payload, 12);
 }
 
@@ -403,6 +426,77 @@ Status protocol::parseStatus(uint8_t const* buffer, int size)
     ret.filter_state = status_byte2filter_state(status_byte);
     return ret;
 }
+
+EKFWithCovariance protocol::parseINSOutput(uint8_t const* buffer, int bufferSize) {
+    uint8_t const* end = buffer + bufferSize;
+
+    base::samples::RigidBodyState rbs;
+    base::samples::RigidBodyAcceleration rba;
+
+    uint8_t const* cursor = buffer;
+    uint32_t time_ms;
+    cursor = endianness::decode<uint32_t>(buffer, time_ms, end);
+    cursor += 8; // skip the time-as-double field
+
+    rbs.time = rba.time = base::Time::fromMilliseconds(time_ms);
+
+    float values[21];
+    for (int i = 0; i < 21; ++i) {
+        cursor = endianness::decode<float>(cursor, values[i], end);
+    }
+    double lat_lon_alt[3];
+    for (int i = 0; i < 3; ++i) {
+        cursor = endianness::decode<double>(cursor, lat_lon_alt[i], end);
+    }
+    uint8_t op_mode = *cursor++;
+    uint8_t lin_accel_switch = *cursor++;
+    uint8_t turn_switch = *cursor++;
+
+    if (cursor != end) {
+        throw std::invalid_argument(
+            "too many bytes in buffer: got " + to_string(bufferSize) +
+            ", expected " + to_string(cursor - buffer));
+    }
+
+    static const double deg2rad = M_PI / 180.0;
+    static const double g2si = 9.80665;
+
+    rbs.orientation =
+        Eigen::AngleAxisd(values[2] * deg2rad, Eigen::Vector3d::UnitZ()) *
+        Eigen::AngleAxisd(values[1] * deg2rad, Eigen::Vector3d::UnitY()) *
+        Eigen::AngleAxisd(values[0] * deg2rad, Eigen::Vector3d::UnitX());
+
+    rba.acceleration = Eigen::Vector3d(
+        values[3], values[4], values[5]) * g2si;
+    rbs.angular_velocity = Eigen::Vector3d(
+        values[11], values[12], values[13]) * deg2rad;
+
+    EKFWithCovariance result;
+    if (op_mode == OPMODE_INS) {
+        rbs.velocity = Eigen::Vector3d(
+            values[17], -values[18], -values[19]);
+
+        result.latitude = base::Angle::fromDeg(lat_lon_alt[0]);
+        result.longitude = base::Angle::fromDeg(lat_lon_alt[1]);
+        rbs.position.z() = lat_lon_alt[2];
+    }
+
+    result.rbs = rbs;
+    result.rba = rba;
+
+    FilterState state;
+    state.mode = static_cast<FilterMode>(op_mode);
+    state.status = 0;
+    if (lin_accel_switch) {
+        state.status |= LINEAR_ACCELERATION;
+    }
+    if (turn_switch) {
+        state.status |= TURN_SWITCH;
+    }
+    result.filter_state = state;
+    return result;
+}
+
 
 EKFWithCovariance protocol::parseEKFWithCovariance(uint8_t const* buffer, int bufferSize) {
     uint8_t const* end = buffer + bufferSize;

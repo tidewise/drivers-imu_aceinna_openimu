@@ -2,6 +2,7 @@
 #define IMU_ACEINNA_OPENIMU_CONFIGURATION_HPP
 
 #include <string>
+#include <base/Eigen.hpp>
 
 namespace imu_aceinna_openimu {
     enum OrientationAxis {
@@ -20,8 +21,7 @@ namespace imu_aceinna_openimu {
         GPS_NOVATEL_ASCII = 2,
         GPS_NMEA0183 = 3,
         GPS_SIRF_BINARY = 4,
-        GPS_UBLOX_PVT = 5,
-        GPS_LAST_KNOWN_PROTOCOL = GPS_UBLOX_PVT
+        GPS_LAST_KNOWN_PROTOCOL = GPS_SIRF_BINARY
     };
 
     struct Configuration {
@@ -47,9 +47,12 @@ namespace imu_aceinna_openimu {
         GPSProtocol gps_protocol = GPS_UBLOX;
         int32_t gps_baud_rate = 115200;
 
-        bool use_gps = true;
-        bool use_magnetometers = true;
-        bool use_gps_course_as_heading = true;
+        double hard_iron[2];
+        double soft_iron_ratio;
+        double soft_iron_angle;
+
+        base::Vector3d lever_arm;
+        base::Vector3d point_of_interest;
     };
 
     inline std::string to_string(std::string const& value) { return value; }

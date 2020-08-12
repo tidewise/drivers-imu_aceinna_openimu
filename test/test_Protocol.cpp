@@ -105,11 +105,16 @@ TEST_F(ProtocolTest, it_parses_a_configuration_response) {
         '+', 'X', '-', 'Y', '+', 'Z', ' ', ' ', // Orientation
         10, 0, 0, 0, 0, 0, 0, 0, // GPS Baudrate
         1, 0, 0, 0, 0, 0, 0, 0, // GPS Protocol
-        1, 0, 0, 0, 0, 0, 0, 0, // Hard Iron X
-        2, 0, 0, 0, 0, 0, 0, 0, // Hard Iron Y
-        3, 0, 0, 0, 0, 0, 0, 0, // Soft Iron X
-        4, 0, 0, 0, 0, 0, 0, 0, // Soft Iron Y
-        4, 0, 0, 0, 4, 0, 0, 0 // Flags
+        0, 0, 0, 0, 0, 0, 0x1C, 0x40, // Hard Iron X
+        0, 0, 0, 0, 0, 0, 0x20, 0x40, // Hard Iron Y
+        0, 0, 0, 0, 0, 0, 0x22, 0x40, // Soft Iron Ratio
+        0, 0, 0, 0, 0, 0, 0x24, 0x40, // Soft Iron Angle
+        0, 0, 0, 0, 0, 0, 0xf0, 0x3f, // Lever Arm X
+        0, 0, 0, 0, 0, 0, 0x00, 0x40, // Lever Arm Y
+        0, 0, 0, 0, 0, 0, 0x08, 0x40, // Lever Arm Z
+        0, 0, 0, 0, 0, 0, 0x10, 0x40, // Point of Interest X
+        0, 0, 0, 0, 0, 0, 0x14, 0x40, // Point of Interest Y
+        0, 0, 0, 0, 0, 0, 0x18, 0x40, // Point of Interest Z
     };
 
     auto conf = parseConfiguration(&buffer[0], buffer.size());
@@ -122,9 +127,16 @@ TEST_F(ProtocolTest, it_parses_a_configuration_response) {
     ASSERT_EQ(imu_aceinna_openimu::ORIENTATION_AXIS_PLUS_Z, conf.orientation.down);
     ASSERT_EQ(10, conf.gps_baud_rate);
     ASSERT_EQ(1, conf.gps_protocol);
-    ASSERT_EQ(0, conf.use_magnetometers);
-    ASSERT_EQ(0, conf.use_gps);
-    ASSERT_EQ(1, conf.use_gps_course_as_heading);
+    ASSERT_FLOAT_EQ(7, conf.hard_iron[0]);
+    ASSERT_FLOAT_EQ(8, conf.hard_iron[1]);
+    ASSERT_FLOAT_EQ(9, conf.soft_iron_ratio);
+    ASSERT_FLOAT_EQ(10, conf.soft_iron_angle);
+    ASSERT_FLOAT_EQ(1, conf.lever_arm.x());
+    ASSERT_FLOAT_EQ(2, conf.lever_arm.y());
+    ASSERT_FLOAT_EQ(3, conf.lever_arm.z());
+    ASSERT_FLOAT_EQ(4, conf.point_of_interest.x());
+    ASSERT_FLOAT_EQ(5, conf.point_of_interest.y());
+    ASSERT_FLOAT_EQ(6, conf.point_of_interest.z());
 }
 
 TEST_F(ProtocolTest, it_raises_if_configuration_buffer_is_smaller_than_the_expected_struct) {

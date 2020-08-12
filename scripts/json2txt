@@ -1,0 +1,34 @@
+#! /usr/bin/env ruby
+
+require "json"
+
+json = JSON.load(File.read(ARGV[0]))
+
+type_size = {
+    "uint8" => 1,
+    "uint32" => 4,
+    "float" => 4,
+    "double" => 8
+}
+
+puts "# Configuration"
+puts
+
+json["userConfiguration"].each do |spec|
+    offset = spec["paramId"] * 8
+    puts "#{spec['paramId']} | #{offset} | #{spec['type']} | #{spec['name']}"
+end
+
+puts
+puts "# Output Packets"
+
+json["userMessages"]["outputPackets"].each do |spec|
+    puts "## #{spec["name"]}: #{spec["description"]}"
+    puts
+    offset = 0
+    spec["payload"].each_with_index do |spec, i|
+        puts "#{i} | #{offset} | #{spec["type"]} | #{spec["name"]} (#{spec["unit"]})"
+        offset += type_size.fetch(spec["type"])
+    end
+    puts
+end

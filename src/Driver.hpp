@@ -68,9 +68,6 @@ namespace imu_aceinna_openimu {
         /** Read the current device configuration */
         Configuration readConfiguration();
 
-        /** Read the current device status */
-        Status readStatus();
-
         /** Change the UART baud rate
          *
          * The change will be effective only if (1) the configuration is saved
@@ -102,16 +99,6 @@ namespace imu_aceinna_openimu {
         /** Configure the periodic packet */
         void writePeriodicPacketConfiguration(std::string packet, int rate);
 
-        /** Configure which sensors can be used by the algorithm */
-        void writeUsedSensors(bool magnetometers, bool gps, bool gps_course_as_heading);
-
-        /** @overload
-         */
-        void writeExtendedPeriodMessageConfiguration(std::string name, int period);
-
-        /** Configure message periods in extended packet period mode (EP) */
-        void writeExtendedPeriodMessageConfiguration(int index, int period);
-
         /**
          * Configure the cutoff frequency for the acceleration low-pass filter
          * (Hz)
@@ -133,6 +120,12 @@ namespace imu_aceinna_openimu {
 
         /** Configure the GPS baud rate */
         void writeGPSBaudrate(int baudrate);
+
+        /** Configure the lever arm */
+        void writeLeverArm(base::Vector3d const& arm);
+
+        /** Configure the point of interest */
+        void writePointOfInterest(base::Vector3d const& point);
 
         /** Save the configuration to flash */
         void saveConfiguration();
