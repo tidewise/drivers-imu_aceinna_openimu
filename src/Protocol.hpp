@@ -132,6 +132,9 @@ namespace imu_aceinna_openimu {
          */
         Status parseStatus(uint8_t const* buffer, int size);
 
+        /** Parse the stock INS output message (e2) */
+        EKFWithCovariance parseINSOutput(uint8_t const* buffer, int bufferSize);
+
         /** Parse the EKF-with-covariance response (e3) */
         EKFWithCovariance parseEKFWithCovariance(uint8_t const* buffer, int bufferSize);
     }

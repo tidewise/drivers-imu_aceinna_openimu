@@ -55,12 +55,11 @@ DeviceInfo Driver::validateDevice(bool allow_bootloader)
     auto deviceInfo = readDeviceInfo();
     if (!deviceInfo.bootloader_mode) {
         auto app_version = deviceInfo.app_version;
-        auto ins = app_version.substr(0, 3);
-        auto tw = app_version.substr(app_version.length() - 2, 2);
-        if (ins != "INS" || tw != "TW") {
+        bool ins = app_version.find("INS") != string::npos;
+        if (!ins) {
             close();
-            throw UnsupportedDevice("this driver requires the TideWise version "\
-                                    "of the INS app, got: " + app_version);
+            throw UnsupportedDevice("this driver requires the INS app, got " +
+                                    app_version);
         }
     }
     else if (!allow_bootloader) {
@@ -92,16 +91,6 @@ DeviceInfo Driver::readDeviceInfo()
     return DeviceInfo { false, deviceID, appVersion };
 }
 
-Status Driver::readStatus()
-{
-    auto packetEnd = protocol::queryStatus(mWriteBuffer);
-    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
-    auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
-    return protocol::parseStatus(
-        mReadBuffer + protocol::PAYLOAD_OFFSET,
-        packetSize - protocol::PACKET_OVERHEAD);
-}
-
 Configuration Driver::readConfiguration()
 {
     auto packetEnd = protocol::queryConfiguration(mWriteBuffer);
@@ -130,45 +119,6 @@ void Driver::queryRestoreDefaultConfiguration() {
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
     auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
     std::cout << "response size: " << packetSize << std::endl;
-}
-
-struct PeriodicMessage {
-    char const* name;
-    int index;
-};
-
-static const PeriodicMessage PERIODIC_MESSAGES[] = {
-    { "z1", 2 },
-    { "e3", 8 },
-    { "i1", 9 }
-};
-
-static PeriodicMessage const* findPeriodicMessage(string name) {
-    for (auto const& p : PERIODIC_MESSAGES) {
-        if (p.name == name) {
-            return &p;
-        }
-    }
-    return nullptr;
-}
-
-void Driver::writeExtendedPeriodMessageConfiguration(string name, int period)
-{
-    auto msg = findPeriodicMessage(name);
-    if (!msg) {
-        throw std::invalid_argument("unknown periodic message " + name);
-    }
-
-    return writeExtendedPeriodMessageConfiguration(msg->index, period);
-}
-
-void Driver::writeExtendedPeriodMessageConfiguration(int index, int period)
-{
-    uint8_t paramIndex = 15 + index / 8;
-    string current = readConfiguration<string>(paramIndex);
-    uint8_t offset = index % 8;
-    current.at(offset) = period;
-    writeConfiguration(paramIndex, current, true);
 }
 
 template <typename T>
@@ -209,6 +159,7 @@ void Driver::writeConfiguration(int index, T value, bool validate)
 }
 template void Driver::writeConfiguration<int64_t>(int, int64_t, bool);
 template void Driver::writeConfiguration<string>(int, string, bool);
+template void Driver::writeConfiguration<double>(int, double, bool);
 
 void Driver::writeConfiguration(Configuration const& conf, bool validate)
 {
@@ -252,14 +203,6 @@ void Driver::writePeriodicPacketConfiguration(string packet, int rate)
     writeConfiguration<int64_t>(4, rate);
 }
 
-void Driver::writeUsedSensors(bool magnetometers, bool gps, bool gps_course_as_heading) {
-    int64_t field = 0;
-    if (magnetometers) field |= 1;
-    if (gps) field |= 2;
-    if (gps_course_as_heading) field |= 4;
-    writeConfiguration<int64_t>(12, field);
-}
-
 void Driver::writeAccelerationLowPassFilter(int64_t rate)
 {
     writeConfiguration<int64_t>(5, rate);
@@ -278,6 +221,20 @@ void Driver::writeGPSBaudrate(int baudrate)
 void Driver::writeGPSProtocol(GPSProtocol protocol)
 {
     writeConfiguration<int64_t>(9, protocol);
+}
+
+void Driver::writeLeverArm(base::Vector3d const& arm)
+{
+    writeConfiguration<double>(14, arm.x());
+    writeConfiguration<double>(15, arm.y());
+    writeConfiguration<double>(16, arm.z());
+}
+
+void Driver::writePointOfInterest(base::Vector3d const& point)
+{
+    writeConfiguration<double>(17, point.x());
+    writeConfiguration<double>(18, point.y());
+    writeConfiguration<double>(19, point.z());
 }
 
 int Driver::extractPacket(uint8_t const* buffer, size_t bufferSize) const
@@ -365,6 +322,10 @@ Driver::UpdateResult Driver::processOne() {
 Driver::UpdateType Driver::processOne(uint8_t const* type, uint8_t const* payload, uint8_t payloadLen) {
     if (type[0] == 'e' && type[1] == '3') {
         mEKFWithCovariance = protocol::parseEKFWithCovariance(payload, payloadLen);
+        return UPDATED_STATE;
+    }
+    else if (type[0] == 'e' && type[1] == '2') {
+        mEKFWithCovariance = protocol::parseINSOutput(payload, payloadLen);
         return UPDATED_STATE;
     }
     else if (type[0] == 'i' && type[1] == '1') {
