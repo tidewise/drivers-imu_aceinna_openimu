@@ -341,3 +341,18 @@ TEST_F(ProtocolTest, it_throws_if_the_payload_buffer_is_bigger_than_the_expected
     ASSERT_THROW_MESSAGE(parseStatus(&payload[0], payload.size()),
                          std::invalid_argument, "received status structure bigger than expected");
 }
+
+TEST_F(ProtocolTest, it_converts_ned_to_nwu) {
+    base::Orientation orientation;
+    orientation =
+        Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitZ()) *
+        Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitY()) *
+        Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX());
+    orientation = valueNEU2NWD(orientation);
+    base::Orientation expected;
+    expected =
+        Eigen::AngleAxisd(-M_PI/4, Eigen::Vector3d::UnitZ()) *
+        Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY()) *
+        Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX());
+    ASSERT_EQ(true, expected.isApprox(orientation));
+}
