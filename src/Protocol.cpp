@@ -483,7 +483,6 @@ EKFWithCovariance protocol::parseINSOutput(uint8_t const* buffer, int bufferSize
         values[3], values[4], values[5]) * g2si;
     rbs.angular_velocity = Eigen::Vector3d(
         values[11], values[12], values[13]) * deg2rad;
-    rbs.angular_velocity = valueNED2NWU(rbs.angular_velocity);
 
     EKFWithCovariance result;
     if (op_mode == OPMODE_INS) {
@@ -566,10 +565,8 @@ EKFWithCovariance protocol::parseEKFWithCovariance(uint8_t const* buffer, int bu
 
     rbs.angular_velocity = Eigen::Vector3d(
         values[12], values[13], values[14]) * deg2rad;
-    rbs.angular_velocity = valueNED2NWU(rbs.angular_velocity);
     rbs.cov_angular_velocity = Eigen::DiagonalMatrix<double, 3>(
         values[15], values[16], values[17]) * deg2rad_square;
-    rbs.cov_angular_velocity = covarianceNED2NWU(rbs.cov_angular_velocity);
 
     EKFWithCovariance result;
     if (state.mode == OPMODE_INS) {
