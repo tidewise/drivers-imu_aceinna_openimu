@@ -344,3 +344,64 @@ Status Driver::getIMUStatus() const
 {
     return mStatus;
 }
+
+void Driver::startMagneticAlignment() {
+    auto packetEnd = protocol::magneticAlignmentCommand(mWriteBuffer, protocol::MA_START);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+}
+
+void Driver::abortMagneticAlignment() {
+    auto packetEnd = protocol::magneticAlignmentCommand(mWriteBuffer, protocol::MA_ABORT);
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+}
+
+void Driver::saveMagneticAlignmentResults() {
+    auto packetEnd = protocol::magneticAlignmentCommand(
+        mWriteBuffer, protocol::MA_SAVE_RESULTS
+    );
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    handleMagneticAlignmentReply();
+}
+
+void Driver::handleMagneticAlignmentReply() {
+    int packetSize = readPacket(mReadBuffer, BUFFER_SIZE);
+    int payloadSize = packetSize - protocol::PAYLOAD_OFFSET - protocol::PACKET_OVERHEAD;
+    if (payloadSize != 1) {
+        throw std::runtime_error(
+            "expected one byte of payload as a result of a magnetic alignment command, "
+            "but got " + to_string(payloadSize)
+        );
+    }
+
+    uint8_t result = mReadBuffer[protocol::PAYLOAD_OFFSET];
+    if (result != 0) {
+        throw std::runtime_error("magnetic alignment command failed");
+    }
+}
+
+bool Driver::queryMagneticAlignmentStatus() {
+    auto packetEnd = protocol::magneticAlignmentCommand(
+        mWriteBuffer, protocol::MA_QUERY_STATUS
+    );
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    int packetSize = readPacket(mReadBuffer, BUFFER_SIZE);
+    if (packetSize != 1) {
+        throw std::runtime_error(
+            "expected one byte of payload as a result of queryMagneticAlignmentStatus, "
+            "but got " + to_string(packetSize)
+        );
+    }
+    return mReadBuffer[0] != 0;
+}
+
+MagneticAlignmentResults Driver::queryMagneticAlignmentResults() {
+    auto packetEnd = protocol::magneticAlignmentCommand(
+        mWriteBuffer, protocol::MA_QUERY_RESULTS
+    );
+    writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
+    int packetSize = readPacket(mReadBuffer, BUFFER_SIZE);
+    return protocol::parseMagneticAlignmentResults(
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD
+    );
+}

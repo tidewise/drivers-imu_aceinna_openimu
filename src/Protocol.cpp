@@ -587,3 +587,40 @@ EKFWithCovariance protocol::parseEKFWithCovariance(uint8_t const* buffer, int bu
     result.filter_state = state;
     return result;
 }
+
+uint8_t* protocol::magneticAlignmentCommand(
+    uint8_t* buffer, MagneticAlignmentCommand command
+) {
+    uint8_t payload[1] = { command };
+    return formatPacket(buffer, "ma", payload, 1);
+}
+
+static MagneticAlignmentResults::Data parseMagneticAlignmentData(uint8_t const* buffer) {
+    int16_t ints[4];
+    for (int i = 0; i < 4; ++i) {
+        ints[i] = static_cast<int16_t>(buffer[i * 2]) << 8 | buffer[i * 2 + 1];
+    }
+
+    MagneticAlignmentResults::Data data;
+    data.hardIronBias[0] = static_cast<float>(ints[0]) / 4096.0;
+    data.hardIronBias[1] = static_cast<float>(ints[1]) / 4096.0;
+    data.softIronScaleRatio = static_cast<float>(ints[2]) / 65535.0;
+    data.softIronAngle = static_cast<float>(ints[2]) / 10430.37835047046;
+    return data;
+}
+
+MagneticAlignmentResults protocol::parseMagneticAlignmentResults(
+    uint8_t const* buffer, int bufferSize
+) {
+    if (bufferSize != 16) {
+        throw std::invalid_argument(
+            "parseMagneticAlignmentResults: expected 16 bytes, but got " +
+            to_string(bufferSize)
+        );
+    }
+
+    MagneticAlignmentResults results;
+    results.current = parseMagneticAlignmentData(buffer);
+    results.estimated = parseMagneticAlignmentData(buffer + 8);
+    return results;
+}
