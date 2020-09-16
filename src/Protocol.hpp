@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <imu_aceinna_openimu/MagneticAlignmentResults.hpp>
 #include <imu_aceinna_openimu/Configuration.hpp>
 #include <imu_aceinna_openimu/EKFWithCovariance.hpp>
 #include <imu_aceinna_openimu/Status.hpp>
@@ -146,6 +147,28 @@ namespace imu_aceinna_openimu {
 
         /** Parse the EKF-with-covariance response (e3) */
         EKFWithCovariance parseEKFWithCovariance(uint8_t const* buffer, int bufferSize);
+
+        enum MagneticAlignmentCommand {
+            MA_QUERY_STATUS = 0,
+            MA_START_WITH_AUTOEND = 1,
+            MA_START = 2,
+            MA_STOP = 3,
+            MA_ACCEPT_RESULTS = 4,
+            MA_SAVE_RESULTS = 5,
+            MA_ABORT = 6,
+            MA_QUERY_RESULTS = 7
+        };
+
+        /** Format a packet containing a magnetic alignment command */
+        uint8_t* magneticAlignmentCommand(
+            uint8_t* buffer, MagneticAlignmentCommand command
+        );
+
+        /** Parse the payload returned by the magnetic alignment "query results" command
+         */
+        MagneticAlignmentResults parseMagneticAlignmentResults(
+            uint8_t const* buffer, int bufferSize
+        );
     }
 }
 

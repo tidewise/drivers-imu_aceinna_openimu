@@ -5,6 +5,8 @@
 #include <imu_aceinna_openimu/DeviceInfo.hpp>
 #include <imu_aceinna_openimu/Configuration.hpp>
 #include <imu_aceinna_openimu/EKFWithCovariance.hpp>
+#include <imu_aceinna_openimu/MagneticAlignmentResults.hpp>
+#include <imu_aceinna_openimu/MagneticAlignmentState.hpp>
 #include <imu_aceinna_openimu/Status.hpp>
 #include <iosfwd>
 
@@ -49,6 +51,8 @@ namespace imu_aceinna_openimu {
          * as well as EP-multiplexed messages
          */
         UpdateType processOne(uint8_t const* type, uint8_t const* message, uint8_t len);
+
+        void handleMagneticAlignmentReply();
 
     public:
         Driver();
@@ -178,6 +182,24 @@ namespace imu_aceinna_openimu {
         /** Write a new app firmware */
         void writeFirmware(std::vector<uint8_t> const& data,
                            std::ostream& progress = nullStream());
+
+        /** Start the magnetic alignment process */
+        void startMagneticAlignment(bool autoend = true);
+
+        /** Start the magnetic alignment process */
+        void stopMagneticAlignment();
+
+        /** Abort a running magnetic alignment process */
+        void abortMagneticAlignment();
+
+        /** Query whether a magnetic alignment process is running */
+        MagneticAlignmentState queryMagneticAlignmentState();
+
+        /** Query the results of the last magnetic alignment process */
+        MagneticAlignmentResults queryMagneticAlignmentResults();
+
+        /** Save the current magnetic alignment results to EEPROM */
+        void saveMagneticAlignmentResults();
     };
 }
 

@@ -130,6 +130,8 @@ int usage()
         << "                    bootloader mode is always using 57600 bauds\n"
         << "  to-app            switch to app mode\n"
         << "  write-firmware P  write a firmware file\n"
+        << "  ma CMD            magnetic alignment calibration. CMD is start, abort\n"
+        << "                    status or save\n"
         << flush;
 
     return 0;
@@ -320,6 +322,10 @@ int main(int argc, char** argv)
             << "App: " << info.app_version << std::endl;
         return 0;
     }
+    else if (cmd == "to-bootloader") {
+        driver.openURI(uri);
+        driver.toBootloader();
+    }
     else if (cmd == "to-app") {
         driver.openURI(uri);
         driver.toApp();
@@ -380,6 +386,68 @@ int main(int argc, char** argv)
     else if (cmd == "reset") {
         driver.openURI(uri);
         driver.queryReset();
+    }
+    else if (cmd == "ma") {
+        if (argc != 4) {
+            cerr << "expected a single argument CMD\n" << std::endl;
+            usage();
+            return 1;
+        }
+
+        driver.openURI(uri);
+        string cmd = argv[3];
+        if (cmd == "start-autoend") {
+            driver.startMagneticAlignment(true);
+        }
+        else if (cmd == "start") {
+            driver.startMagneticAlignment(false);
+        }
+        else if (cmd == "stop") {
+            driver.stopMagneticAlignment();
+        }
+        else if (cmd == "abort") {
+            driver.abortMagneticAlignment();
+        }
+        else if (cmd == "save") {
+            driver.saveMagneticAlignmentResults();
+        }
+        else if (cmd == "status") {
+            auto state = driver.queryMagneticAlignmentState();
+            std::cout << "Magnetic alignment ";
+            switch(state) {
+                case MA_RUNNING_WITH_AUTOEND:
+                    std::cout << "currently running with autoend" << std::endl;
+                    break;
+                case MA_RUNNING:
+                    std::cout << "currently running without autoend" << std::endl;
+                    break;
+                case MA_STOPPED:
+                    std::cout << "not running" << std::endl;
+                    break;
+            }
+
+            auto results = driver.queryMagneticAlignmentResults();
+            std::cout
+                << "Current parameters:\n"
+                << "  Hard Iron:" << fixed << setprecision(1)
+                    << " X=" << results.current.hardIronBias[0] << "g"
+                    << " Y=" << results.current.hardIronBias[1] << "g"
+                    << "\n"
+                << "  Soft Iron:" << fixed << setprecision(1)
+                    << " Angle=" << results.current.softIronAngle * 180 / M_PI
+                    << "deg"
+                    << " Ratio=" << results.current.softIronScaleRatio << "\n"
+                << "Estimated parameters:\n"
+                << "  Hard Iron:" << fixed << setprecision(1)
+                    << " X=" << results.estimated.hardIronBias[0] << "g"
+                    << " Y=" << results.estimated.hardIronBias[1] << "g"
+                    << "\n"
+                << "  Soft Iron:" << fixed << setprecision(1)
+                    << " Angle=" << results.estimated.softIronAngle * 180 / M_PI
+                    << "deg"
+                    << " Ratio=" << results.estimated.softIronScaleRatio << "\n"
+                << std::flush;
+        }
     }
     else {
         cerr << "unexpected command " << cmd << endl;
