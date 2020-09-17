@@ -21,9 +21,9 @@ namespace imu_aceinna_openimu {
         static const int MAX_PACKET_SIZE = MIN_PACKET_SIZE + 256;
         // Biggest block that can be written when flashing the firmware
         static const int MAX_APP_BLOCK_SIZE = 240;
-        // Transformation that rotates by PI the X axis. Usefull for NED/NWD convertions
-        static const base::Matrix3d TF(base::AngleAxisd(M_PI, base::Vector3d::UnitX()));
-
+        // Transformation that rotates by PI the X axis. Usefull for NED/NWU convertions
+        static const base::Matrix3d RotNED2NWU(base::AngleAxisd(M_PI, base::Vector3d::UnitX()));
+        static const base::Matrix3d RotNWU2NED(base::AngleAxisd(-M_PI, base::Vector3d::UnitX()));
 
         enum WriteStatus {
             WRITE_STATUS_OK = 0,
@@ -136,10 +136,10 @@ namespace imu_aceinna_openimu {
         Status parseStatus(uint8_t const* buffer, int size);
 
         template<typename T>
-        T valueNEU2NWD(T neu);
+        T valueNED2NWU(T neu);
 
         template<typename H>
-        H covarianceNEU2NWD(H neu);
+        H covarianceNED2NWU(H neu);
 
         /** Parse the stock INS output message (e2) */
         EKFWithCovariance parseINSOutput(uint8_t const* buffer, int bufferSize);

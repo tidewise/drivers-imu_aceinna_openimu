@@ -348,7 +348,7 @@ TEST_F(ProtocolTest, it_converts_ned_to_nwu) {
         Eigen::AngleAxisd(M_PI/4, Eigen::Vector3d::UnitZ()) *
         Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitY()) *
         Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX());
-    orientation = valueNEU2NWD(orientation);
+    orientation = valueNED2NWU(orientation);
     base::Orientation expected;
     expected =
         Eigen::AngleAxisd(-M_PI/4, Eigen::Vector3d::UnitZ()) *
