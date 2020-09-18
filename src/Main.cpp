@@ -264,8 +264,13 @@ int main(int argc, char** argv)
                         << fixed
                         << " " << setprecision(1) << base::getRoll(state.rbs.orientation) * 180 / M_PI << " "
                         << " " << setprecision(1) << base::getPitch(state.rbs.orientation) * 180 / M_PI << " "
-                        << " " << setprecision(1) << base::getYaw(state.rbs.orientation) * 180 / M_PI
-                        << std::endl;
+                        << " " << setprecision(1) << base::getYaw(state.rbs.orientation) * 180 / M_PI << " "
+                        << " " << setprecision(1) << state.rbs.position.x() << " "
+                        << " " << setprecision(1) << state.rbs.position.y() << " "
+                        << " " << setprecision(1) << state.rbs.position.z() << " "
+                        << " " << setprecision(1) << state.rbs.velocity.x() << " "
+                        << " " << setprecision(1) << state.rbs.velocity.y() << " "
+                        << " " << setprecision(1) << state.rbs.velocity.z() << std::endl;
             }
 
             usleep(poll_period_usec);
