@@ -482,12 +482,12 @@ EKFWithCovariance protocol::parseINSOutput(uint8_t const* buffer, int bufferSize
     rba.acceleration = Eigen::Vector3d(
         values[3], values[4], values[5]) * g2si;
     rbs.angular_velocity = Eigen::Vector3d(
-        values[11], values[12], values[13]) * deg2rad;
+        values[9], values[10], values[11]) * deg2rad;
 
     EKFWithCovariance result;
     if (op_mode == OPMODE_INS) {
         rbs.velocity = Eigen::Vector3d(
-            values[17], -values[18], -values[19]);
+            values[15], -values[16], -values[17]);
 
         result.latitude = base::Angle::fromDeg(lat_lon_alt[0]);
         result.longitude = base::Angle::fromDeg(lat_lon_alt[1]);
