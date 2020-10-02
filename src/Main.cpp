@@ -332,6 +332,10 @@ int main(int argc, char** argv)
             << "App: " << info.app_version << std::endl;
         return 0;
     }
+    else if (cmd == "to-bootloader") {
+        driver.openURI(uri);
+        driver.toBootloader();
+    }
     else if (cmd == "to-app") {
         driver.openURI(uri);
         driver.toApp();
