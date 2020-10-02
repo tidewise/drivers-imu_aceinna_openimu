@@ -1,5 +1,5 @@
-#ifndef IMU_ACEINNA_OPENIMU_EKFWITHCOVARIANCE_HPP
-#define IMU_ACEINNA_OPENIMU_EKFWITHCOVARIANCE_HPP
+#ifndef IMU_ACEINNA_OPENIMU_PERIODICUPDATE_HPP
+#define IMU_ACEINNA_OPENIMU_PERIODICUPDATE_HPP
 
 #include <base/Float.hpp>
 #include <base/samples/RigidBodyState.hpp>
@@ -7,10 +7,15 @@
 #include <gps_base/UTMConverter.hpp>
 #include <base/Angle.hpp>
 #include <imu_aceinna_openimu/FilterState.hpp>
+#include <imu_aceinna_openimu/MagneticInfo.hpp>
 
 namespace imu_aceinna_openimu {
-    /** The firmware's EKF-with-covariance message (e3) */
-    struct EKFWithCovariance {
+    /** Data structure that holds the periodic update information
+     * from the messages we support (stock e2 and the tidewise-specific e4)
+     */
+    struct PeriodicUpdate {
+        MagneticInfo magnetic_info;
+
         /** Pose solution
          *
          * Note that the position field is not set. Use e.g. gps_base::UTMConverter

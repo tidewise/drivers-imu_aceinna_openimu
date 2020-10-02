@@ -274,70 +274,28 @@ void Driver::writeFirmware(std::vector<uint8_t> const& bin, std::ostream& progre
     }
 }
 
-void Driver::UpdateResult::add(UpdateType type) {
-    if (type != UPDATED_IGNORED) {
-        updated |= type;
-    }
-}
-bool Driver::UpdateResult::isUpdated(UpdateType type) const {
-    return updated & type;
-}
-
-Driver::UpdateResult Driver::processOne() {
+bool Driver::processOne() {
     int packetSize = readPacket(mReadBuffer, BUFFER_SIZE);
-    UpdateResult result;
-
-    if (mReadBuffer[2] == 'E' && mReadBuffer[3] == 'P') {
-        uint8_t const* payload = mReadBuffer + protocol::PAYLOAD_OFFSET;
-        uint8_t payloadLen = packetSize - protocol::PACKET_OVERHEAD;
-        uint8_t offset = 0;
-        while (offset != payloadLen) {
-            if (offset + 3 > payloadLen) {
-                throw std::invalid_argument("EP: payload too small for embedded message");
-            }
-
-            uint8_t len = payload[offset + 2];
-            if (offset + 3 + len > payloadLen) {
-                throw std::invalid_argument("EP: payload too small for embedded message");
-            }
-
-            auto update = processOne(
-                payload + offset,
-                payload + offset + 3, len);
-            result.add(update);
-
-            offset += len + 3;
-        }
-    }
-    else {
-        auto update = processOne(mReadBuffer + 2,
-                                 mReadBuffer + protocol::PAYLOAD_OFFSET,
-                                 packetSize - protocol::PACKET_OVERHEAD);
-        result.add(update);
-    }
-
-    return result;
+    return processOne(mReadBuffer + 2,
+                      mReadBuffer + protocol::PAYLOAD_OFFSET,
+                      packetSize - protocol::PACKET_OVERHEAD);
 }
 
-Driver::UpdateType Driver::processOne(uint8_t const* type, uint8_t const* payload, uint8_t payloadLen) {
-    if (type[0] == 'e' && type[1] == '3') {
-        mEKFWithCovariance = protocol::parseEKFWithCovariance(payload, payloadLen);
-        return UPDATED_STATE;
+bool Driver::processOne(uint8_t const* type, uint8_t const* payload, uint8_t payloadLen) {
+    if (type[0] == 'e' && type[1] == '2') {
+        mPeriodicUpdate = protocol::parseE2Output(payload, payloadLen);
+        return true;
     }
-    else if (type[0] == 'e' && type[1] == '2') {
-        mEKFWithCovariance = protocol::parseINSOutput(payload, payloadLen);
-        return UPDATED_STATE;
+    else if (type[0] == 'e' && type[1] == '4') {
+        mPeriodicUpdate = protocol::parseE4Output(payload, payloadLen);
+        return true;
     }
-    else if (type[0] == 'i' && type[1] == '1') {
-        mStatus = protocol::parseStatus(payload, payloadLen);
-        return UPDATED_STATUS;
-    }
-    return UPDATED_IGNORED;
+    return false;
 }
 
-EKFWithCovariance Driver::getState() const
+PeriodicUpdate Driver::getLastPeriodicUpdate() const
 {
-    return mEKFWithCovariance;
+    return mPeriodicUpdate;
 }
 
 Status Driver::getIMUStatus() const
