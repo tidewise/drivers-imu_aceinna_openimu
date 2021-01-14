@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <imu_aceinna_openimu/Configuration.hpp>
-#include <imu_aceinna_openimu/EKFWithCovariance.hpp>
+#include <imu_aceinna_openimu/PeriodicUpdate.hpp>
 #include <imu_aceinna_openimu/Status.hpp>
 
 namespace imu_aceinna_openimu {
@@ -142,10 +142,10 @@ namespace imu_aceinna_openimu {
         H covarianceNED2NWU(H neu);
 
         /** Parse the stock INS output message (e2) */
-        EKFWithCovariance parseINSOutput(uint8_t const* buffer, int bufferSize);
+        PeriodicUpdate parseE2Output(uint8_t const* buffer, int bufferSize);
 
-        /** Parse the EKF-with-covariance response (e3) */
-        EKFWithCovariance parseEKFWithCovariance(uint8_t const* buffer, int bufferSize);
+        /** Parse the Tidewise-defined e4 package */
+        PeriodicUpdate parseE4Output(uint8_t const* buffer, int bufferSize);
     }
 }
 

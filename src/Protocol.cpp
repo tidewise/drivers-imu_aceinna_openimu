@@ -1,6 +1,6 @@
 #include <imu_aceinna_openimu/Protocol.hpp>
 #include <imu_aceinna_openimu/Endianness.hpp>
-#include <imu_aceinna_openimu/EKFWithCovariance.hpp>
+#include <imu_aceinna_openimu/PeriodicUpdate.hpp>
 #include <cstring>
 #include <stdexcept>
 #include <iostream>
@@ -439,7 +439,7 @@ H protocol::covarianceNED2NWU(H neu){
     return neu;
 }
 
-EKFWithCovariance protocol::parseINSOutput(uint8_t const* buffer, int bufferSize) {
+PeriodicUpdate protocol::parseE2Output(uint8_t const* buffer, int bufferSize) {
     uint8_t const* end = buffer + bufferSize;
 
     base::samples::RigidBodyState rbs;
@@ -484,7 +484,7 @@ EKFWithCovariance protocol::parseINSOutput(uint8_t const* buffer, int bufferSize
     rbs.angular_velocity = Eigen::Vector3d(
         values[9], values[10], values[11]) * deg2rad;
 
-    EKFWithCovariance result;
+    PeriodicUpdate result;
     if (op_mode == OPMODE_INS) {
         rbs.velocity = Eigen::Vector3d(
             values[15], -values[16], -values[17]);
@@ -510,80 +510,64 @@ EKFWithCovariance protocol::parseINSOutput(uint8_t const* buffer, int bufferSize
     return result;
 }
 
-
-EKFWithCovariance protocol::parseEKFWithCovariance(uint8_t const* buffer, int bufferSize) {
+PeriodicUpdate protocol::parseE4Output(uint8_t const* buffer, int bufferSize) {
     uint8_t const* end = buffer + bufferSize;
 
     base::samples::RigidBodyState rbs;
     base::samples::RigidBodyAcceleration rba;
 
     uint8_t const* cursor = buffer;
-    uint32_t time_gps_itow;
-    cursor = endianness::decode<uint32_t>(buffer, time_gps_itow, end);
-    rbs.time = rba.time = base::Time::fromMilliseconds(time_gps_itow);
+    uint32_t time_ms;
+    cursor = endianness::decode<uint32_t>(buffer, time_ms, end);
+    uint8_t filterFlags = cursor[0];
+    ++cursor;
 
-    float values[24];
-    for (int i = 0; i < 24; ++i) {
+    float values[10];
+    for (int i = 0; i < 10; ++i) {
         cursor = endianness::decode<float>(cursor, values[i], end);
     }
     double lat_lon_alt[3];
     for (int i = 0; i < 3; ++i) {
         cursor = endianness::decode<double>(cursor, lat_lon_alt[i], end);
     }
-    float pos_covariance[3];
-    for (int i = 0; i < 3; ++i) {
-        cursor = endianness::decode<float>(cursor, pos_covariance[i], end);
-    }
-    uint8_t status_byte = *cursor++;
-
-    if (cursor != end) {
-        throw std::invalid_argument(
-            "too many bytes in buffer: got " + to_string(bufferSize) +
-            ", expected " + to_string(cursor - buffer));
+    float magInfo[7];
+    for (int i = 0; i < 7; ++i) {
+        cursor = endianness::decode<float>(cursor, magInfo[i], end);
     }
 
     static const double deg2rad = M_PI / 180.0;
-    static const double deg2rad_square = deg2rad * deg2rad;
 
-    rbs.orientation =
-        Eigen::AngleAxisd(values[2] * deg2rad, Eigen::Vector3d::UnitZ()) *
-        Eigen::AngleAxisd(values[1] * deg2rad, Eigen::Vector3d::UnitY()) *
-        Eigen::AngleAxisd(values[0] * deg2rad, Eigen::Vector3d::UnitX());
+    FilterState state;
+    state.mode = static_cast<FilterMode>(filterFlags & 0x7);
+    state.status = filterFlags >> 3;
+
+    rbs.time = rba.time = base::Time::fromMilliseconds(time_ms);
+
+    rbs.orientation = Eigen::Quaterniond(values[0], values[1], values[2], values[3]);
     rbs.orientation = valueNED2NWU(rbs.orientation);
-    rbs.cov_orientation = Eigen::DiagonalMatrix<double, 3>(
-        values[3] * deg2rad_square,
-        values[4] * deg2rad_square,
-        values[5] * deg2rad_square
-    );
-    rbs.cov_orientation = covarianceNED2NWU(rbs.cov_orientation);
+    rbs.angular_velocity = Eigen::Vector3d(values[4], values[5], values[6]) * deg2rad;
 
-    FilterState state = status_byte2filter_state(status_byte);
-
-    rba.acceleration = Eigen::Vector3d(values[6], values[7], values[8]);
-    rba.cov_acceleration = Eigen::DiagonalMatrix<double, 3>(
-        values[9], values[10], values[11]);
-
-    rbs.angular_velocity = Eigen::Vector3d(
-        values[12], values[13], values[14]) * deg2rad;
-    rbs.cov_angular_velocity = Eigen::DiagonalMatrix<double, 3>(
-        values[15], values[16], values[17]) * deg2rad_square;
-
-    EKFWithCovariance result;
+    PeriodicUpdate result;
     if (state.mode == OPMODE_INS) {
         rbs.velocity = Eigen::Vector3d(
-            values[18], values[19], values[20]);
-        rbs.cov_velocity = Eigen::DiagonalMatrix<double, 3>(
-            values[21], values[22], values[23]);
+            values[7], -values[8], -values[9]);
 
-        rbs.cov_position = Eigen::DiagonalMatrix<double, 3>(
-            pos_covariance[0], pos_covariance[1], pos_covariance[2]);
         result.latitude = base::Angle::fromDeg(lat_lon_alt[0]);
         result.longitude = base::Angle::fromDeg(lat_lon_alt[1]);
         rbs.position.z() = lat_lon_alt[2];
     }
 
+    MagneticInfo magnetic_info;
+    magnetic_info.time = rbs.time;
+    magnetic_info.magnetometers =
+        Eigen::Vector3d(magInfo[0], magInfo[1], magInfo[2]);
+    magnetic_info.measured_euler_angles =
+        Eigen::Vector3d(magInfo[3], magInfo[4], magInfo[5]);
+    magnetic_info.declination = base::Angle::fromRad(magInfo[6]);
+
     result.rbs = rbs;
     result.rba = rba;
+    result.magnetic_info = magnetic_info;
     result.filter_state = state;
     return result;
 }

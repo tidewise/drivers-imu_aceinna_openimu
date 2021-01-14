@@ -229,25 +229,7 @@ int main(int argc, char** argv)
             throw std::invalid_argument("do not know how to set parameter " + param_name);
         }
     }
-    else if (cmd == "show-packets") {
-        driver.openURI(uri);
-        driver.validateDevice();
-        while(true) {
-            auto updated = driver.processOne();
-            cout << base::Time::now() << " ";
-            if (updated.isUpdated(Driver::UPDATED_RAW_IMU_SENSORS)) {
-                cout << " " << "RAW_IMU_SENSORS";
-            }
-            if (updated.isUpdated(Driver::UPDATED_STATE)) {
-                cout << " " << "STATE";
-            }
-            if (updated.isUpdated(Driver::UPDATED_STATUS)) {
-                cout << " " << "STATUS";
-            }
-            cout << std::endl;
-        }
-    }
-    else if (cmd == "poll") {
+    else if (cmd == "poll-pose") {
         int poll_period_usec = 100000;
         if (argc == 4) {
             poll_period_usec = atof(argv[3]) * 1000000;
@@ -257,8 +239,8 @@ int main(int argc, char** argv)
         driver.validateDevice();
         driver.writePeriodicPacketConfiguration("e2", 10);
         while(true) {
-            if (driver.processOne().isUpdated(Driver::UPDATED_STATE)) {
-                auto state = driver.getState();
+            if (driver.processOne()) {
+                auto state = driver.getLastPeriodicUpdate();
                 std::cout << state.rbs.time
                         << " " << state.filter_state.toString()
                         << fixed
@@ -271,6 +253,36 @@ int main(int argc, char** argv)
                         << " " << setprecision(1) << state.rbs.velocity.x() << " "
                         << " " << setprecision(1) << state.rbs.velocity.y() << " "
                         << " " << setprecision(1) << state.rbs.velocity.z() << std::endl;
+            }
+
+            usleep(poll_period_usec);
+        }
+    }
+    else if (cmd == "poll-mag") {
+        int poll_period_usec = 100000;
+        if (argc == 4) {
+            poll_period_usec = atof(argv[3]) * 1000000;
+        }
+
+        driver.openURI(uri);
+        driver.validateDevice();
+        driver.writePeriodicPacketConfiguration("e4", 10);
+        double const rad2deg = 180.0 / M_PI;
+        while(true) {
+            if (driver.processOne()) {
+                auto state = driver.getLastPeriodicUpdate();
+                std::cout
+                    << state.magnetic_info.time
+                    << fixed << setprecision(2)
+                    << " " << state.magnetic_info.magnetometers[0]
+                    << " " << state.magnetic_info.magnetometers[1]
+                    << " " << state.magnetic_info.magnetometers[2]
+                    << " " << atan2(state.magnetic_info.magnetometers[2], state.magnetic_info.magnetometers[0]) * rad2deg
+                    << " " << state.magnetic_info.measured_euler_angles[0] * rad2deg
+                    << " " << state.magnetic_info.measured_euler_angles[1] * rad2deg
+                    << " " << state.magnetic_info.measured_euler_angles[2] * rad2deg
+                    << " " << state.magnetic_info.declination.getDeg()
+                    << std::endl;
             }
 
             usleep(poll_period_usec);
@@ -319,6 +331,10 @@ int main(int argc, char** argv)
             << "ID: " << info.device_id << "\n"
             << "App: " << info.app_version << std::endl;
         return 0;
+    }
+    else if (cmd == "to-bootloader") {
+        driver.openURI(uri);
+        driver.toBootloader();
     }
     else if (cmd == "to-app") {
         driver.openURI(uri);

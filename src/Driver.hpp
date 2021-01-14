@@ -4,7 +4,7 @@
 #include <iodrivers_base/Driver.hpp>
 #include <imu_aceinna_openimu/DeviceInfo.hpp>
 #include <imu_aceinna_openimu/Configuration.hpp>
-#include <imu_aceinna_openimu/EKFWithCovariance.hpp>
+#include <imu_aceinna_openimu/PeriodicUpdate.hpp>
 #include <imu_aceinna_openimu/Status.hpp>
 #include <iosfwd>
 
@@ -14,22 +14,13 @@ namespace imu_aceinna_openimu {
     };
 
     class Driver : public iodrivers_base::Driver {
-    public:
-        enum UpdateType
-        {
-            UPDATED_STATE = 1,
-            UPDATED_RAW_IMU_SENSORS = 2,
-            UPDATED_STATUS = 4,
-            UPDATED_IGNORED
-        };
-
     private:
         static const int BUFFER_SIZE = 256 * 15;
         uint8_t mWriteBuffer[BUFFER_SIZE];
         uint8_t mReadBuffer[BUFFER_SIZE];
 
         Status mStatus;
-        EKFWithCovariance mEKFWithCovariance;
+        PeriodicUpdate mPeriodicUpdate;
 
         template<typename T>
         void writeConfigurationGeneric(int index, T value, bool validate);
@@ -48,7 +39,7 @@ namespace imu_aceinna_openimu {
         /** Internal processOne implementation that allows to process single messages
          * as well as EP-multiplexed messages
          */
-        UpdateType processOne(uint8_t const* type, uint8_t const* message, uint8_t len);
+        bool processOne(uint8_t const* type, uint8_t const* message, uint8_t len);
 
     public:
         Driver();
@@ -155,19 +146,11 @@ namespace imu_aceinna_openimu {
 
         static std::ostream& nullStream();
 
-        struct UpdateResult
-        {
-            int updated = 0;
-
-            void add(UpdateType type);
-            bool isUpdated(UpdateType type) const;
-        };
-
-        UpdateResult processOne();
+        bool processOne();
 
         /** Return the last state received by processOne
          */
-        EKFWithCovariance getState() const;
+        PeriodicUpdate getLastPeriodicUpdate() const;
 
         /** Return the last IMU status received by processOne
          *
