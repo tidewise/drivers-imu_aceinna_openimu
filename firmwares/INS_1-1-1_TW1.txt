@@ -1,0 +1,191 @@
+# Packet format
+
+Unless specified otherwise, all multibyte integer values are LSB first
+
+Offset | Length | Value
+0      | 2      | 0x55 0x55, packet start marker
+2      | 2      | Packet code (e.g. e4)
+4      | 1      | Payload size (N)
+5      | N      | Payload
+5+N    | 1      | CRC MSB
+5+N+1  | 1      | CRC LSB
+
+# Configuration
+
+0 | 0 | uint64 | Data CRC
+1 | 8 | uint64 | Data Size
+2 | 16 | int64 | Baud Rate
+3 | 24 | char8 | Packet Type
+4 | 32 | int64 | Packet Rate
+5 | 40 | int64 | Accel LPF
+6 | 48 | int64 | Rate LPF
+7 | 56 | char8 | Orientation
+8 | 64 | int64 | GPS Baud Rate
+9 | 72 | int64 | GPS Protocol
+10 | 80 | double | hard iron x
+11 | 88 | double | hard iron y
+12 | 96 | double | soft iron ratio
+13 | 104 | double | soft iron angle
+14 | 112 | double | lever arm x
+15 | 120 | double | lever arm y
+16 | 128 | double | lever arm z
+17 | 136 | double | point of interest x
+18 | 144 | double | point of interest y
+19 | 152 | double | point of interest z
+
+# Output Packets
+## z1: Scaled 9-Axis IMU
+
+0 | 0 | uint32 | time (msec)
+1 | 4 | float | xAccel (m/s^2)
+2 | 8 | float | yAccel (m/s^2)
+3 | 12 | float | zAccel (m/s^2)
+4 | 16 | float | xRate (deg/s)
+5 | 20 | float | yRate (deg/s)
+6 | 24 | float | zRate (deg/s)
+7 | 28 | float | xMag (Gauss)
+8 | 32 | float | yMag (Gauss)
+9 | 36 | float | zMag (Gauss)
+
+## a1: VG Output Message
+
+0 | 0 | uint32 | timeITOW (msec)
+1 | 4 | double | time (s)
+2 | 12 | float | roll (deg)
+3 | 16 | float | pitch (deg)
+4 | 20 | float | xRate (deg/s)
+5 | 24 | float | yRate (deg/s)
+6 | 28 | float | zRate (deg/s)
+7 | 32 | float | xAccel (m/s^2)
+8 | 36 | float | yAccel (m/s^2)
+9 | 40 | float | zAccel (m/s^2)
+10 | 44 | uint8 | opMode (unitless)
+11 | 45 | uint8 | linAccSw (unitless)
+12 | 46 | uint8 | turnSw (unitless)
+
+## a2: VG Output Message
+
+0 | 0 | uint32 | timeITOW (msec)
+1 | 4 | double | time (s)
+2 | 12 | float | roll (deg)
+3 | 16 | float | pitch (deg)
+4 | 20 | float | heading (deg)
+5 | 24 | float | xRate (deg/s)
+6 | 28 | float | yRate (deg/s)
+7 | 32 | float | zRate (deg/s)
+8 | 36 | float | xAccel (m/s^2)
+9 | 40 | float | yAccel (m/s^2)
+10 | 44 | float | zAccel (m/s^2)
+
+## e1: VG/AHRS Output Message
+
+0 | 0 | uint32 | timeCntr (msec)
+1 | 4 | double | time (s)
+2 | 12 | float | roll (deg)
+3 | 16 | float | pitch (deg)
+4 | 20 | float | heading (deg)
+5 | 24 | float | xAccel (g)
+6 | 28 | float | yAccel (g)
+7 | 32 | float | zAccel (g)
+8 | 36 | float | xRate (deg/s)
+9 | 40 | float | yRate (deg/s)
+10 | 44 | float | zRate (deg/s)
+11 | 48 | float | xRateBias (deg/s)
+12 | 52 | float | yRateBias (deg/s)
+13 | 56 | float | zRateBias (deg/s)
+14 | 60 | float | xMag (Gauss)
+15 | 64 | float | yMag (Gauss)
+16 | 68 | float | zMag (Gauss)
+17 | 72 | uint8 | opMode (unitless)
+18 | 73 | uint8 | linAccSw (unitless)
+19 | 74 | uint8 | turnSw (unitless)
+
+## e2: INS Output Message
+
+0 | 0 | uint32 | timeCntr (msec)
+1 | 4 | double | time (s)
+2 | 12 | float | roll (deg)
+3 | 16 | float | pitch (deg)
+4 | 20 | float | heading (deg)
+5 | 24 | float | xAccel (g)
+6 | 28 | float | yAccel (g)
+7 | 32 | float | zAccel (g)
+8 | 36 | float | xAccelBias (m/s^2)
+9 | 40 | float | yAccelBias (m/s^2)
+10 | 44 | float | zAccelBias (m/s^2)
+11 | 48 | float | xRate (deg/s)
+12 | 52 | float | yRate (deg/s)
+13 | 56 | float | zRate (deg/s)
+14 | 60 | float | xRateBias (deg/s)
+15 | 64 | float | yRateBias (deg/s)
+16 | 68 | float | zRateBias (deg/s)
+17 | 72 | float | velNorth (m/s)
+18 | 76 | float | velEast (m/s)
+19 | 80 | float | velDown (m/s)
+20 | 84 | float | xMag (Gauss)
+21 | 88 | float | yMag (Gauss)
+22 | 92 | float | zMag (Gauss)
+23 | 96 | double | lat (deg)
+24 | 104 | double | lon (deg)
+25 | 112 | double | alt (m)
+26 | 120 | uint8 | opMode (unitless)
+27 | 121 | uint8 | linAccSw (unitless)
+28 | 122 | uint8 | turnSw (unitless)
+
+## e4: INS Output Message
+
+0  | 0  | uint32 | timeCntr (msec)
+1  | 4  | uint8  | flags (see below)
+2  | 5  | float  | q.w
+3  | 9  | float  | q.x
+4  | 13 | float  | q.y
+5  | 17 | float  | q.z
+6  | 21 | float  | xRate (deg/s)
+7  | 25 | float  | yRate (deg/s)
+8  | 29 | float  | zRate (deg/s)
+9  | 33 | float  | velNorth (m/s)
+10 | 37 | float  | velEast (m/s)
+11 | 39 | float  | velDown (m/s)
+12 | 43 | double | lat (deg)
+13 | 51 | double | lon (deg)
+14 | 59 | double | alt (m)
+15 | 67 | float  | magX
+16 | 71 | float  | magY
+17 | 75 | float  | magZ
+18 | 79 | float  | magEulerRoll (rad)
+19 | 83 | float  | magEulerPitch (rad)
+20 | 87 | float  | magEulerYaw (rad)
+21 | 91 | float  | magDeclination (rad)
+
+State:
+
+Bits | Value
+0-2  | Filter mode
+3    | Linear acceleration
+4    | Turn switch
+5    | Course used as heading
+
+Filter Modes:
+
+Value | Description
+0     | Stabilizing
+1     | Initializing
+2     | AHRS High Gain
+3     | AHRS Low Gain
+4     | INS
+
+## s1: IMU Scaled-Sensor Output Message
+
+0 | 0 | uint32 | timeCntr (msec)
+1 | 4 | double | time (s)
+2 | 12 | float | xAccel (m/s^2)
+3 | 16 | float | yAccel (m/s^2)
+4 | 20 | float | zAccel (m/s^2)
+5 | 24 | float | xRate (deg/s)
+6 | 28 | float | yRate (deg/s)
+7 | 32 | float | zRate (deg/s)
+8 | 36 | float | xMag (Gauss)
+9 | 40 | float | yMag (Gauss)
+10 | 44 | float | zMag (Gauss)
+11 | 48 | float | temp (degC)
+
