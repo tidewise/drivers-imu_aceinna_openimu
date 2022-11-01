@@ -1,9 +1,9 @@
 #ifndef IMU_ACEINNA_OPENIMU_MAGNETICINFO_HPP
 #define IMU_ACEINNA_OPENIMU_MAGNETICINFO_HPP
 
-#include <base/Time.hpp>
 #include <base/Angle.hpp>
 #include <base/Eigen.hpp>
+#include <base/Time.hpp>
 
 namespace imu_aceinna_openimu {
     /**

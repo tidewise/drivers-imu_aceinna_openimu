@@ -1,8 +1,8 @@
 #ifndef IMU_ACEINNA_OPENIMU_CONFIGURATION_HPP
 #define IMU_ACEINNA_OPENIMU_CONFIGURATION_HPP
 
-#include <string>
 #include <base/Eigen.hpp>
+#include <string>
 
 namespace imu_aceinna_openimu {
     enum OrientationAxis {
@@ -31,10 +31,12 @@ namespace imu_aceinna_openimu {
             OrientationAxis down = ORIENTATION_AXIS_PLUS_Z;
 
             Orientation();
-            Orientation(OrientationAxis forward, OrientationAxis right, OrientationAxis down);
+            Orientation(OrientationAxis forward,
+                OrientationAxis right,
+                OrientationAxis down);
 
-            bool operator ==(Orientation const& other) const;
-            bool operator !=(Orientation const& other) const;
+            bool operator==(Orientation const& other) const;
+            bool operator!=(Orientation const& other) const;
         };
 
         std::string periodic_packet_type = "z1";
@@ -55,9 +57,14 @@ namespace imu_aceinna_openimu {
         base::Vector3d point_of_interest;
     };
 
-    inline std::string to_string(std::string const& value) { return value; }
-    template<typename T>
-    std::string to_string(T const& value) { return std::to_string(value); }
+    inline std::string to_string(std::string const& value)
+    {
+        return value;
+    }
+    template <typename T> std::string to_string(T const& value)
+    {
+        return std::to_string(value);
+    }
     std::string to_string(Configuration::Orientation const& orientation);
 }
 
