@@ -449,6 +449,43 @@ Status byte (least significant to most significant):
 | 1 | Turn switch |
 | 1 | Course is used as heading |
 
+## e4 - INS Output Message
+
+| Offset | Type   | Description |
+|--------|--------|--------------------------|
+| 0 | uint32 | GPS time of week (ms) |
+| 4 | uint8 | Filter Flags (see below) |
+| 5 | float | imu_ned2ned_rot - q.w |
+| 9 | float | imu_ned2ned_rot - q.x |
+| 13 | float | imu_ned2ned_rot - q.y |
+| 17 | float | imu_ned2ned_rot - q.z |
+| 21 | float | imu_ned2ned_angv - x (deg) |
+| 25 | float | imu_ned2ned_angv - y (deg) |
+| 29 | float | imu_ned2ned_angv - z (deg) |
+| 33 | float | imu_ned2ned_linv - x |
+| 37 | float | imu_ned2ned_linv - y |
+| 41 | float | imu_ned2ned_linv - z |
+| 49 | double | latitude (deg) |
+| 57 | double | longitude (deg) |
+| 65 | double | altitude over MSL |
+| 65 | float | mag.x |
+| 69 | float | mag.y |
+| 73 | float | mag.z |
+| 77 | float | mag_euler.x |
+| 81 | float | mag_euler.y |
+| 85 | float | mag_euler.z |
+| 89 | float | declination |
+
+Filter state byte (least significant to most significant):
+
+| Length (bit) | Description |
+|--------------|-------------|
+| 3 | Algorithm state (see beginning of section) |
+| 1 | Still switch |
+| 1 | Turn switch |
+| 1 | Course is used as heading |
+
+
 ## s1 - IMU Scaled Sensors
 
 | Offset | Type   | Description |
