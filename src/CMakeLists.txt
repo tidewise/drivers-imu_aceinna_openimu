@@ -8,3 +8,5 @@ rock_library(imu_aceinna_openimu
 rock_executable(imu_aceinna_openimu_ctl Main.cpp
     DEPS imu_aceinna_openimu)
 
+rock_executable(imu_aceinna_openimu_nmea_publisher NMEAPublisher.cpp MainNMEAPublisher.cpp
+    DEPS imu_aceinna_openimu)
