@@ -72,7 +72,7 @@ void NMEAPublisher::publishNMEA(PeriodicUpdate const& update)
     if (base::isUnknown(update.rbs.orientation.w())) {
         return;
     }
-    double heading = update.rbs.getYaw();
+    double heading = -update.rbs.getYaw();
     if (heading < 0) {
         heading += 2 * M_PI;
     }
