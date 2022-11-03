@@ -82,7 +82,8 @@ void NMEAPublisher::publishNMEA(PeriodicUpdate const& update)
     str << "GPHDT," << fixed << setprecision(1) << heading << ",T";
     uint8_t checksum = computeNMEAChecksum(str.str());
 
-    str << "*" << setw(2) << setfill('0') << hex << static_cast<int>(checksum);
+    str << "*" << setw(2) << setfill('0') << hex << uppercase
+        << static_cast<int>(checksum);
 
     string sentence = "$" + str.str() + "\r\n";
     m_nmea.writePacket(reinterpret_cast<uint8_t const*>(sentence.data()),

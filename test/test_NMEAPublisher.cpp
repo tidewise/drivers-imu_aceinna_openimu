@@ -100,7 +100,7 @@ TEST_F(NMEAPublisherTest, it_generates_valid_NMEA_messages_based_on_a_e4_message
     int size = nmea.readRaw(buffer.data(), buffer.size(), Time::fromMilliseconds(100));
     string msg(reinterpret_cast<char const*>(buffer.data()),
         reinterpret_cast<char const*>(buffer.data()) + size);
-    ASSERT_EQ("$GPHDT,148.7,T*3f\r\n", msg);
+    ASSERT_EQ("$GPHDT,148.7,T*3F\r\n", msg);
 }
 
 TEST_F(NMEAPublisherTest, it_ignores_an_invalid_orientation)
