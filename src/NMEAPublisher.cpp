@@ -5,6 +5,7 @@
 
 using namespace imu_aceinna_openimu;
 using namespace std;
+using base::Time;
 
 NMEAPublisher::NMEAPublisher()
 {
@@ -14,15 +15,21 @@ NMEAPublisher::NMEAPublisher()
 void NMEAPublisher::openDevice(std::string const& uri)
 {
     m_device.openURI(uri);
+    m_device.setReadTimeout(Time::fromSeconds(1));
+    m_device.setWriteTimeout(Time::fromSeconds(1));
 }
 void NMEAPublisher::openForward(std::string const& uri, base::Time const& read_timeout)
 {
     m_forward_read_timeout = read_timeout;
     m_forward.openURI(uri);
+    m_forward.setReadTimeout(Time::fromSeconds(1));
+    m_forward.setWriteTimeout(Time::fromSeconds(1));
 }
 void NMEAPublisher::openNMEA(std::string const& uri)
 {
     m_nmea.openURI(uri);
+    m_nmea.setReadTimeout(Time::fromSeconds(1));
+    m_nmea.setWriteTimeout(Time::fromSeconds(1));
 }
 
 int NMEAPublisher::forwardToDevice()
