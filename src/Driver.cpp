@@ -5,11 +5,11 @@
 using namespace std;
 using namespace imu_aceinna_openimu;
 
-struct NullStream : std::ostream {
-};
+struct NullStream : std::ostream {};
 static NullStream null_progress;
 
-ostream& Driver::nullStream() {
+ostream& Driver::nullStream()
+{
     return null_progress;
 }
 
@@ -17,7 +17,7 @@ Driver::Driver()
     : iodrivers_base::Driver(BUFFER_SIZE)
 {
     static_assert(protocol::MAX_PACKET_SIZE * 10 < Driver::BUFFER_SIZE,
-                  "Buffer size needs to contain at least 10 packets");
+        "Buffer size needs to contain at least 10 packets");
 }
 
 int Driver::readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* command)
@@ -25,12 +25,13 @@ int Driver::readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* com
     return readPacketsUntil(buffer, bufferSize, command, getReadTimeout());
 }
 
-int Driver::readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* command,
-                             base::Time timeout)
+int Driver::readPacketsUntil(uint8_t* buffer,
+    int bufferSize,
+    uint8_t const* command,
+    base::Time timeout)
 {
     base::Time deadline = base::Time::now() + timeout;
-    do
-    {
+    do {
         auto now = base::Time::now();
         auto singleReadTimeout = now < deadline ? deadline - now : base::Time();
         int packetSize = readPacket(buffer, bufferSize, singleReadTimeout);
@@ -38,14 +39,12 @@ int Driver::readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* com
             throw std::invalid_argument("IMU reports an invalid packet");
         if (buffer[2] == command[0] && buffer[3] == command[1])
             return packetSize;
-    }
-    while (deadline > base::Time::now());
+    } while (deadline > base::Time::now());
 
     char const* cmd_chars = reinterpret_cast<char const*>(command);
-    throw iodrivers_base::TimeoutError(
-        iodrivers_base::TimeoutError::PACKET,
+    throw iodrivers_base::TimeoutError(iodrivers_base::TimeoutError::PACKET,
         "packets were received, but none were of the expected type " +
-        string(cmd_chars, cmd_chars + 2) + " received in the expected timeout");
+            string(cmd_chars, cmd_chars + 2) + " received in the expected timeout");
 
     return 0; // never reached
 }
@@ -58,8 +57,8 @@ DeviceInfo Driver::validateDevice(bool allow_bootloader)
         bool ins = app_version.find("INS") != string::npos;
         if (!ins) {
             close();
-            throw UnsupportedDevice("this driver requires the INS app, got " +
-                                    app_version);
+            throw UnsupportedDevice(
+                "this driver requires the INS app, got " + app_version);
         }
     }
     else if (!allow_bootloader) {
@@ -74,21 +73,19 @@ DeviceInfo Driver::readDeviceInfo()
     auto packetEnd = protocol::queryDeviceID(mWriteBuffer);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
     auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
-    string deviceID = protocol::parseDeviceID(
-        mReadBuffer + protocol::PAYLOAD_OFFSET,
+    string deviceID = protocol::parseDeviceID(mReadBuffer + protocol::PAYLOAD_OFFSET,
         packetSize - protocol::PACKET_OVERHEAD);
 
     if (deviceID.find("OpenIMU_Bootloader") == 0) {
-        return DeviceInfo { true, deviceID, "" };
+        return DeviceInfo{true, deviceID, ""};
     }
 
     packetEnd = protocol::queryAppVersion(mWriteBuffer);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
     packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
-    string appVersion = protocol::parseAppVersion(
-        mReadBuffer + protocol::PAYLOAD_OFFSET,
+    string appVersion = protocol::parseAppVersion(mReadBuffer + protocol::PAYLOAD_OFFSET,
         packetSize - protocol::PACKET_OVERHEAD);
-    return DeviceInfo { false, deviceID, appVersion };
+    return DeviceInfo{false, deviceID, appVersion};
 }
 
 Configuration Driver::readConfiguration()
@@ -96,40 +93,41 @@ Configuration Driver::readConfiguration()
     auto packetEnd = protocol::queryConfiguration(mWriteBuffer);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
     auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
-    return protocol::parseConfiguration(
-        mReadBuffer + protocol::PAYLOAD_OFFSET,
+    return protocol::parseConfiguration(mReadBuffer + protocol::PAYLOAD_OFFSET,
         packetSize - protocol::PACKET_OVERHEAD);
 }
 
-template<typename T>
-string to_string(T value) {
+template <typename T> string to_string(T value)
+{
     return std::to_string(value);
 }
-string to_string(string value) {
+string to_string(string value)
+{
     return value;
 }
 
-void Driver::queryReset() {
+void Driver::queryReset()
+{
     auto packetEnd = protocol::queryReset(mWriteBuffer);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
 }
 
-void Driver::queryRestoreDefaultConfiguration() {
+void Driver::queryRestoreDefaultConfiguration()
+{
     auto packetEnd = protocol::queryRestoreDefaultConfiguration(mWriteBuffer);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
     auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
     std::cout << "response size: " << packetSize << std::endl;
 }
 
-template <typename T>
-void Driver::writeConfiguration(int index, T value, bool validate)
+template <typename T> void Driver::writeConfiguration(int index, T value, bool validate)
 {
     auto packetEnd = protocol::writeConfiguration(mWriteBuffer, index, value);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
     int packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
-    auto status = protocol::parseWriteConfigurationStatus(
-        mReadBuffer + protocol::PAYLOAD_OFFSET,
-        packetSize - protocol::PACKET_OVERHEAD);
+    auto status =
+        protocol::parseWriteConfigurationStatus(mReadBuffer + protocol::PAYLOAD_OFFSET,
+            packetSize - protocol::PACKET_OVERHEAD);
 
     if (status != protocol::WRITE_STATUS_OK) {
         string error_message;
@@ -142,18 +140,18 @@ void Driver::writeConfiguration(int index, T value, bool validate)
         else {
             error_message = "unknown error";
         }
-        throw ConfigurationWriteFailed(
-            "writing configuration parameter " + to_string(index) + " failed: " +
-            error_message);
+        throw ConfigurationWriteFailed("writing configuration parameter " +
+                                       to_string(index) + " failed: " + error_message);
     }
 
     if (validate) {
         auto actual = readConfiguration<T>(index);
         if (actual != value) {
             throw ConfigurationWriteFailed(
-                "writing configuration parameter " + to_string(index) + " failed. "
-                "Current property value is " + to_string(actual) +
-                ", expected " + to_string(value));
+                "writing configuration parameter " + to_string(index) +
+                " failed. "
+                "Current property value is " +
+                to_string(actual) + ", expected " + to_string(value));
         }
     }
 }
@@ -170,14 +168,13 @@ void Driver::writeConfiguration(Configuration const& conf, bool validate)
     writeConfiguration(7, conf.orientation, validate);
 }
 
-template<typename T>
-T Driver::readConfiguration(int index)
+template <typename T> T Driver::readConfiguration(int index)
 {
     auto packetEnd = protocol::queryConfigurationParameter(mWriteBuffer, index);
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
     auto packetSize = readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2);
-    return protocol::parseConfigurationParameter<T>(
-        mReadBuffer + protocol::PAYLOAD_OFFSET,
+    return protocol::parseConfigurationParameter<T>(mReadBuffer +
+                                                        protocol::PAYLOAD_OFFSET,
         packetSize - protocol::PACKET_OVERHEAD,
         index);
 }
@@ -265,23 +262,27 @@ void Driver::writeFirmware(std::vector<uint8_t> const& bin, std::ostream& progre
         int remaining = bin.size() - i;
         int blockSize = min(remaining, protocol::MAX_APP_BLOCK_SIZE);
 
-        auto packetEnd = protocol::queryAppBlockWrite(
-            mWriteBuffer, i, &bin[i], blockSize);
+        auto packetEnd =
+            protocol::queryAppBlockWrite(mWriteBuffer, i, &bin[i], blockSize);
         writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
-        readPacketsUntil(mReadBuffer, BUFFER_SIZE, mWriteBuffer + 2,
-                         base::Time::fromSeconds(10));
+        readPacketsUntil(mReadBuffer,
+            BUFFER_SIZE,
+            mWriteBuffer + 2,
+            base::Time::fromSeconds(10));
         i += blockSize;
     }
 }
 
-bool Driver::processOne() {
+bool Driver::processOne()
+{
     int packetSize = readPacket(mReadBuffer, BUFFER_SIZE);
     return processOne(mReadBuffer + 2,
-                      mReadBuffer + protocol::PAYLOAD_OFFSET,
-                      packetSize - protocol::PACKET_OVERHEAD);
+        mReadBuffer + protocol::PAYLOAD_OFFSET,
+        packetSize - protocol::PACKET_OVERHEAD);
 }
 
-bool Driver::processOne(uint8_t const* type, uint8_t const* payload, uint8_t payloadLen) {
+bool Driver::processOne(uint8_t const* type, uint8_t const* payload, uint8_t payloadLen)
+{
     if (type[0] == 'e' && type[1] == '2') {
         mPeriodicUpdate = protocol::parseE2Output(payload, payloadLen);
         return true;

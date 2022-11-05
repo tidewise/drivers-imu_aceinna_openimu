@@ -1,8 +1,8 @@
-#include <iostream>
+#include <fstream>
 #include <imu_aceinna_openimu/Driver.hpp>
 #include <imu_aceinna_openimu/Protocol.hpp>
-#include <fstream>
 #include <iomanip>
+#include <iostream>
 
 using namespace std;
 using namespace imu_aceinna_openimu;
@@ -23,27 +23,28 @@ struct Parameter {
 };
 
 static const Parameter PARAMETERS[] = {
-    { "periodic-packet-type", 3, PARAM_STRING, nullptr },
-    { "periodic-packet-rate", 4, PARAM_INTEGER, nullptr },
-    { "acceleration-filter", 5, PARAM_INTEGER, nullptr },
-    { "angular-velocity-filter", 6, PARAM_INTEGER, nullptr },
-    { "orientation", 7, PARAM_ORIENTATION, nullptr },
-    { "gps-baudrate", 8, PARAM_INTEGER, nullptr },
-    { "gps-protocol", 9, PARAM_OTHER, nullptr },
-    { "hard-iron-x", 10, PARAM_DOUBLE, nullptr },
-    { "hard-iron-y", 11, PARAM_DOUBLE, nullptr },
-    { "soft-iron-ratio", 12, PARAM_DOUBLE, nullptr },
-    { "soft-iron-angle", 13, PARAM_DOUBLE, nullptr },
-    { "lever-arm-x", 14, PARAM_DOUBLE, nullptr },
-    { "lever-arm-y", 15, PARAM_DOUBLE, nullptr },
-    { "lever-arm-z", 16, PARAM_DOUBLE, nullptr },
-    { "point-of-interest-x", 17, PARAM_DOUBLE, nullptr },
-    { "point-of-interest-y", 18, PARAM_DOUBLE, nullptr },
-    { "point-of-interest-z", 19, PARAM_DOUBLE, nullptr },
-    { nullptr, 0, PARAM_OTHER }
+    {   "periodic-packet-type",  3,      PARAM_STRING, nullptr},
+    {   "periodic-packet-rate",  4,     PARAM_INTEGER, nullptr},
+    {    "acceleration-filter",  5,     PARAM_INTEGER, nullptr},
+    {"angular-velocity-filter",  6,     PARAM_INTEGER, nullptr},
+    {            "orientation",  7, PARAM_ORIENTATION, nullptr},
+    {           "gps-baudrate",  8,     PARAM_INTEGER, nullptr},
+    {           "gps-protocol",  9,       PARAM_OTHER, nullptr},
+    {            "hard-iron-x", 10,      PARAM_DOUBLE, nullptr},
+    {            "hard-iron-y", 11,      PARAM_DOUBLE, nullptr},
+    {        "soft-iron-ratio", 12,      PARAM_DOUBLE, nullptr},
+    {        "soft-iron-angle", 13,      PARAM_DOUBLE, nullptr},
+    {            "lever-arm-x", 14,      PARAM_DOUBLE, nullptr},
+    {            "lever-arm-y", 15,      PARAM_DOUBLE, nullptr},
+    {            "lever-arm-z", 16,      PARAM_DOUBLE, nullptr},
+    {    "point-of-interest-x", 17,      PARAM_DOUBLE, nullptr},
+    {    "point-of-interest-y", 18,      PARAM_DOUBLE, nullptr},
+    {    "point-of-interest-z", 19,      PARAM_DOUBLE, nullptr},
+    {                  nullptr,  0,       PARAM_OTHER        }
 };
 
-Parameter const* findParameter(string name) {
+Parameter const* findParameter(string name)
+{
     for (auto p = PARAMETERS; p->name; ++p) {
         if (p->name == name) {
             return p;
@@ -52,7 +53,8 @@ Parameter const* findParameter(string name) {
     return nullptr;
 }
 
-void displayParameters(ostream& stream) {
+void displayParameters(ostream& stream)
+{
     for (auto p = PARAMETERS; p->name; ++p) {
         stream << "\n" << p->name;
         if (p->doc) {
@@ -67,15 +69,16 @@ struct GPSProtocolDescription {
 };
 
 GPSProtocolDescription GPS_PROTOCOLS[] = {
-    { GPS_AUTO, "auto" },
-    { GPS_UBLOX, "ublox" },
-    { GPS_NOVATEL_BINARY, "novatel-binary" },
-    { GPS_NOVATEL_ASCII, "novatel-ascii" },
-    { GPS_NMEA0183, "nmea" },
-    { GPS_SIRF_BINARY, "sirf-binary" }
+    {          GPS_AUTO,           "auto"},
+    {         GPS_UBLOX,          "ublox"},
+    {GPS_NOVATEL_BINARY, "novatel-binary"},
+    { GPS_NOVATEL_ASCII,  "novatel-ascii"},
+    {      GPS_NMEA0183,           "nmea"},
+    {   GPS_SIRF_BINARY,    "sirf-binary"}
 };
 
-void gpsDisplayProtocolList(ostream& out) {
+void gpsDisplayProtocolList(ostream& out)
+{
     bool first = true;
     for (auto i : GPS_PROTOCOLS) {
         if (!first)
@@ -84,7 +87,8 @@ void gpsDisplayProtocolList(ostream& out) {
     }
 }
 
-string gpsProtocolToString(GPSProtocol protocol) {
+string gpsProtocolToString(GPSProtocol protocol)
+{
     for (auto i : GPS_PROTOCOLS) {
         if (protocol == i.protocol) {
             return i.name;
@@ -93,7 +97,8 @@ string gpsProtocolToString(GPSProtocol protocol) {
     throw std::invalid_argument("unknown protocol code " + to_string(protocol));
 }
 
-GPSProtocol gpsProtocolFromString(string name) {
+GPSProtocol gpsProtocolFromString(string name)
+{
     for (auto i : GPS_PROTOCOLS) {
         if (name == i.name) {
             return i.protocol;
@@ -118,8 +123,10 @@ int usage()
         << "  find-rate         find the baud rate on a serial line. Do not specify\n"
         << "                    the rate in the URI\n"
         << "  set-period PACKET PERIOD set period of a specific packet. Only effective\n"
-        << "                    if periodic-packet-type is set to EP. PERIOD is a number of\n"
-        << "                    periods as set by periodic-packet-rate. For instance, if\n"
+        << "                    if periodic-packet-type is set to EP. PERIOD is a number "
+           "of\n"
+        << "                    periods as set by periodic-packet-rate. For instance, "
+           "if\n"
         << "                    periodic-packet-rate is 10 and PERIOD is 10, the actual\n"
         << "                    packet period is 1s (100ms base period * 10)\n"
         << "  set-rate RATE     change the baud rate. The new rate will be effective\n"
@@ -157,27 +164,29 @@ int main(int argc, char** argv)
         }
         else {
             auto conf = driver.readConfiguration();
-            cout
-                << "ID: " << info.device_id << "\n"
-                << "App: " << info.app_version << "\n"
-                << "Periodic packet type: " << conf.periodic_packet_type << "\n"
-                << "Periodic packet rate: " << conf.periodic_packet_rate << "\n"
-                << "Angular velocity low-pass filter: " << conf.angular_velocity_low_pass_filter << "\n"
-                << "Acceleration low-pass filter: " << conf.acceleration_low_pass_filter << "\n"
-                << "Orientation: " << to_string(conf.orientation) << "\n"
-                << "GPS Protocol: " << gpsProtocolToString(conf.gps_protocol) << "\n"
-                << "GPS Baud Rate: " << conf.gps_baud_rate << "\n"
-                << "Hard Iron: " << conf.hard_iron[0] << " " << conf.hard_iron[1] << "\n"
-                << "Soft Iron: ratio=" << conf.soft_iron_ratio << ", " << conf.soft_iron_angle << "\n"
-                << "Lever Arm: "
-                    << "x=" << conf.lever_arm.x() << ", "
-                    << "y=" << conf.lever_arm.y() << ", "
-                    << "z=" << conf.lever_arm.z() << "\n"
-                << "Point of Interest: "
-                    << "x=" << conf.point_of_interest.x() << ", "
-                    << "y=" << conf.point_of_interest.y() << ", "
-                    << "z=" << conf.point_of_interest.z() << "\n"
-                << flush;
+            cout << "ID: " << info.device_id << "\n"
+                 << "App: " << info.app_version << "\n"
+                 << "Periodic packet type: " << conf.periodic_packet_type << "\n"
+                 << "Periodic packet rate: " << conf.periodic_packet_rate << "\n"
+                 << "Angular velocity low-pass filter: "
+                 << conf.angular_velocity_low_pass_filter << "\n"
+                 << "Acceleration low-pass filter: " << conf.acceleration_low_pass_filter
+                 << "\n"
+                 << "Orientation: " << to_string(conf.orientation) << "\n"
+                 << "GPS Protocol: " << gpsProtocolToString(conf.gps_protocol) << "\n"
+                 << "GPS Baud Rate: " << conf.gps_baud_rate << "\n"
+                 << "Hard Iron: " << conf.hard_iron[0] << " " << conf.hard_iron[1] << "\n"
+                 << "Soft Iron: ratio=" << conf.soft_iron_ratio << ", "
+                 << conf.soft_iron_angle << "\n"
+                 << "Lever Arm: "
+                 << "x=" << conf.lever_arm.x() << ", "
+                 << "y=" << conf.lever_arm.y() << ", "
+                 << "z=" << conf.lever_arm.z() << "\n"
+                 << "Point of Interest: "
+                 << "x=" << conf.point_of_interest.x() << ", "
+                 << "y=" << conf.point_of_interest.y() << ", "
+                 << "z=" << conf.point_of_interest.z() << "\n"
+                 << flush;
         }
         return 0;
     }
@@ -189,7 +198,8 @@ int main(int argc, char** argv)
             return 0;
         }
         else if (argc != 5) {
-            cerr << "set expects exactly two more parameters NAME and VALUE" << endl << endl;
+            cerr << "set expects exactly two more parameters NAME and VALUE" << endl
+                 << endl;
             return usage();
         }
 
@@ -238,21 +248,23 @@ int main(int argc, char** argv)
         driver.openURI(uri);
         driver.validateDevice();
         driver.writePeriodicPacketConfiguration("e2", 10);
-        while(true) {
+        while (true) {
             if (driver.processOne()) {
                 auto state = driver.getLastPeriodicUpdate();
-                std::cout << state.rbs.time
-                        << " " << state.filter_state.toString()
-                        << fixed
-                        << " " << setprecision(1) << base::getRoll(state.rbs.orientation) * 180 / M_PI << " "
-                        << " " << setprecision(1) << base::getPitch(state.rbs.orientation) * 180 / M_PI << " "
-                        << " " << setprecision(1) << base::getYaw(state.rbs.orientation) * 180 / M_PI << " "
-                        << " " << setprecision(1) << state.rbs.position.x() << " "
-                        << " " << setprecision(1) << state.rbs.position.y() << " "
-                        << " " << setprecision(1) << state.rbs.position.z() << " "
-                        << " " << setprecision(1) << state.rbs.velocity.x() << " "
-                        << " " << setprecision(1) << state.rbs.velocity.y() << " "
-                        << " " << setprecision(1) << state.rbs.velocity.z() << std::endl;
+                std::cout << state.rbs.time << " " << state.filter_state.toString()
+                          << fixed << " " << setprecision(1)
+                          << base::getRoll(state.rbs.orientation) * 180 / M_PI << " "
+                          << " " << setprecision(1)
+                          << base::getPitch(state.rbs.orientation) * 180 / M_PI << " "
+                          << " " << setprecision(1)
+                          << base::getYaw(state.rbs.orientation) * 180 / M_PI << " "
+                          << " " << setprecision(1) << state.rbs.position.x() << " "
+                          << " " << setprecision(1) << state.rbs.position.y() << " "
+                          << " " << setprecision(1) << state.rbs.position.z() << " "
+                          << " " << setprecision(1) << state.rbs.velocity.x() << " "
+                          << " " << setprecision(1) << state.rbs.velocity.y() << " "
+                          << " " << setprecision(1) << state.rbs.velocity.z()
+                          << std::endl;
             }
 
             usleep(poll_period_usec);
@@ -268,21 +280,20 @@ int main(int argc, char** argv)
         driver.validateDevice();
         driver.writePeriodicPacketConfiguration("e4", 10);
         double const rad2deg = 180.0 / M_PI;
-        while(true) {
+        while (true) {
             if (driver.processOne()) {
                 auto state = driver.getLastPeriodicUpdate();
-                std::cout
-                    << state.magnetic_info.time
-                    << fixed << setprecision(2)
-                    << " " << state.magnetic_info.magnetometers[0]
-                    << " " << state.magnetic_info.magnetometers[1]
-                    << " " << state.magnetic_info.magnetometers[2]
-                    << " " << atan2(state.magnetic_info.magnetometers[2], state.magnetic_info.magnetometers[0]) * rad2deg
-                    << " " << state.magnetic_info.measured_euler_angles[0] * rad2deg
-                    << " " << state.magnetic_info.measured_euler_angles[1] * rad2deg
-                    << " " << state.magnetic_info.measured_euler_angles[2] * rad2deg
-                    << " " << state.magnetic_info.declination.getDeg()
-                    << std::endl;
+                std::cout << state.magnetic_info.time << fixed << setprecision(2) << " "
+                          << state.magnetic_info.magnetometers[0] << " "
+                          << state.magnetic_info.magnetometers[1] << " "
+                          << state.magnetic_info.magnetometers[2] << " "
+                          << atan2(state.magnetic_info.magnetometers[2],
+                                 state.magnetic_info.magnetometers[0]) *
+                                 rad2deg
+                          << " " << state.magnetic_info.measured_euler_angles[0] * rad2deg
+                          << " " << state.magnetic_info.measured_euler_angles[1] * rad2deg
+                          << " " << state.magnetic_info.measured_euler_angles[2] * rad2deg
+                          << " " << state.magnetic_info.declination.getDeg() << std::endl;
             }
 
             usleep(poll_period_usec);
@@ -309,8 +320,8 @@ int main(int argc, char** argv)
         return 0;
     }
     else if (cmd == "find-rate") {
-        int rates[] = { 38400, 57600, 115200, 230400, 0 };
-        for (int i = 0; ; ++i) {
+        int rates[] = {38400, 57600, 115200, 230400, 0};
+        for (int i = 0;; ++i) {
             int r = rates[i];
             if (r == 0) {
                 cerr << "cannot find openIMU on " + uri << endl;
@@ -323,13 +334,13 @@ int main(int argc, char** argv)
                 cout << "found OpenIMU at " << r << " bauds" << endl;
                 break;
             }
-            catch(iodrivers_base::TimeoutError&) {}
+            catch (iodrivers_base::TimeoutError&) {
+            }
         }
         auto info = driver.validateDevice();
 
-        cout
-            << "ID: " << info.device_id << "\n"
-            << "App: " << info.app_version << std::endl;
+        cout << "ID: " << info.device_id << "\n"
+             << "App: " << info.app_version << std::endl;
         return 0;
     }
     else if (cmd == "to-bootloader") {
@@ -349,7 +360,7 @@ int main(int argc, char** argv)
 
         std::vector<uint8_t> firmware;
         string path = argv[3];
-        ifstream file(path, ios::in|ios::binary|ios::ate);
+        ifstream file(path, ios::in | ios::binary | ios::ate);
         if (!file.is_open()) {
             throw std::runtime_error("cannot open " + path + " for reading");
         }
@@ -368,8 +379,7 @@ int main(int argc, char** argv)
                 string bootloader_uri = uri.substr(0, uri.rfind(":")) + ":57600";
                 driver.openURI(bootloader_uri);
                 info = driver.readDeviceInfo();
-                cout << "contacted unit in bootloader mode at "
-                     << bootloader_uri << endl;
+                cout << "contacted unit in bootloader mode at " << bootloader_uri << endl;
                 if (!info.bootloader_mode) {
                     std::cerr << "failed to switch to bootloader mode" << std::endl;
                     return 1;
@@ -389,9 +399,8 @@ int main(int argc, char** argv)
         driver.openURI(uri);
         cout << "\rfirmware update successful" << endl;
         info = driver.readDeviceInfo();
-        cout
-            << "ID: " << info.device_id << "\n"
-            << "App: " << info.app_version << std::endl;
+        cout << "ID: " << info.device_id << "\n"
+             << "App: " << info.app_version << std::endl;
     }
     else if (cmd == "reset") {
         driver.openURI(uri);

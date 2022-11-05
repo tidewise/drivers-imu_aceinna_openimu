@@ -1,11 +1,11 @@
 #ifndef IMU_ACEINNA_OPENIMU_PERIODICUPDATE_HPP
 #define IMU_ACEINNA_OPENIMU_PERIODICUPDATE_HPP
 
-#include <base/Float.hpp>
-#include <base/samples/RigidBodyState.hpp>
-#include <base/samples/RigidBodyAcceleration.hpp>
-#include <gps_base/UTMConverter.hpp>
 #include <base/Angle.hpp>
+#include <base/Float.hpp>
+#include <base/samples/RigidBodyAcceleration.hpp>
+#include <base/samples/RigidBodyState.hpp>
+#include <gps_base/UTMConverter.hpp>
 #include <imu_aceinna_openimu/FilterState.hpp>
 #include <imu_aceinna_openimu/MagneticInfo.hpp>
 

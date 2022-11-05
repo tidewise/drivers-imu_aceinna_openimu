@@ -1,17 +1,18 @@
-#include <imu_aceinna_openimu/Protocol.hpp>
+#include <base/samples/RigidBodyAcceleration.hpp>
+#include <base/samples/RigidBodyState.hpp>
+#include <cstring>
 #include <imu_aceinna_openimu/Endianness.hpp>
 #include <imu_aceinna_openimu/PeriodicUpdate.hpp>
-#include <cstring>
-#include <stdexcept>
+#include <imu_aceinna_openimu/Protocol.hpp>
 #include <iostream>
-#include <base/samples/RigidBodyState.hpp>
-#include <base/samples/RigidBodyAcceleration.hpp>
+#include <stdexcept>
 
 using namespace std;
 using namespace imu_aceinna_openimu;
 using endianness::decode;
 
-OrientationAxis decodeOrientationAxis(string axis) {
+OrientationAxis decodeOrientationAxis(string axis)
+{
     int result;
     if (axis[1] == 'X') {
         result = ORIENTATION_AXIS_PLUS_X;
@@ -23,16 +24,16 @@ OrientationAxis decodeOrientationAxis(string axis) {
         result = ORIENTATION_AXIS_PLUS_Z;
     }
     else {
-        throw std::invalid_argument("unexpected axis letter in '" + axis +
-                                    "', expected X, Y or Z");
+        throw std::invalid_argument(
+            "unexpected axis letter in '" + axis + "', expected X, Y or Z");
     }
 
     if (axis[0] == '-') {
         result += 1;
     }
     else if (axis[0] != '+') {
-        throw std::invalid_argument("unexpected axis direction in '" + axis +
-                                    "', expected + or -");
+        throw std::invalid_argument(
+            "unexpected axis direction in '" + axis + "', expected + or -");
     }
     return static_cast<OrientationAxis>(result);
 }
@@ -46,14 +47,21 @@ Configuration::Orientation protocol::decodeOrientationString(string orientation)
     return ret;
 }
 
-static std::string encodeOrientationAxis(OrientationAxis axis) {
-    switch(axis) {
-        case ORIENTATION_AXIS_PLUS_X: return "+X";
-        case ORIENTATION_AXIS_MINUS_X: return "-X";
-        case ORIENTATION_AXIS_PLUS_Y: return "+Y";
-        case ORIENTATION_AXIS_MINUS_Y: return "-Y";
-        case ORIENTATION_AXIS_PLUS_Z: return "+Z";
-        case ORIENTATION_AXIS_MINUS_Z: return "-Z";
+static std::string encodeOrientationAxis(OrientationAxis axis)
+{
+    switch (axis) {
+        case ORIENTATION_AXIS_PLUS_X:
+            return "+X";
+        case ORIENTATION_AXIS_MINUS_X:
+            return "-X";
+        case ORIENTATION_AXIS_PLUS_Y:
+            return "+Y";
+        case ORIENTATION_AXIS_MINUS_Y:
+            return "-Y";
+        case ORIENTATION_AXIS_PLUS_Z:
+            return "+Z";
+        case ORIENTATION_AXIS_MINUS_Z:
+            return "-Z";
         default:
             throw std::invalid_argument("encodeOrientationAxis: invalid axis");
     }
@@ -69,7 +77,7 @@ int protocol::extractPacket(uint8_t const* buffer, int bufferSize)
     for (packetStart = 0; packetStart < bufferSize; ++packetStart) {
         if (buffer[packetStart] == PACKET_START_MARKER) {
             if (packetStart + 1 == bufferSize) {
-                return -packetStart;
+                return -packetStart; // remove all bytes before the packet start marker
             }
             else if (buffer[packetStart + 1] == PACKET_START_MARKER) {
                 break;
@@ -119,8 +127,10 @@ uint16_t protocol::crc(uint8_t const* begin, uint8_t const* end)
     return crc;
 }
 
-uint8_t* protocol::formatPacket(uint8_t* buffer, char const* code,
-                                uint8_t const* payload, int size)
+uint8_t* protocol::formatPacket(uint8_t* buffer,
+    char const* code,
+    uint8_t const* payload,
+    int size)
 {
     buffer[0] = protocol::PACKET_START_MARKER;
     buffer[1] = protocol::PACKET_START_MARKER;
@@ -165,15 +175,13 @@ uint8_t* protocol::queryConfiguration(uint8_t* buffer)
 Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize)
 {
     if (bufferSize < 96) {
-        throw std::invalid_argument("buffer size for message gA (configuration) "\
+        throw std::invalid_argument("buffer size for message gA (configuration) "
                                     "smaller than 96 bytes");
     }
     uint8_t const* end = buffer + bufferSize;
     Configuration ret;
-    ret.periodic_packet_type = string(
-        reinterpret_cast<char const*>(buffer + 24),
-        reinterpret_cast<char const*>(buffer + 26)
-    );
+    ret.periodic_packet_type = string(reinterpret_cast<char const*>(buffer + 24),
+        reinterpret_cast<char const*>(buffer + 26));
     uint8_t const* cursor = buffer;
 
     int64_t values[3];
@@ -184,10 +192,8 @@ Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize
     ret.acceleration_low_pass_filter = values[1];
     ret.angular_velocity_low_pass_filter = values[2];
 
-    string orientation(
-        reinterpret_cast<char const*>(buffer + 56),
-        reinterpret_cast<char const*>(buffer + 62)
-    );
+    string orientation(reinterpret_cast<char const*>(buffer + 56),
+        reinterpret_cast<char const*>(buffer + 62));
     ret.orientation = decodeOrientationString(orientation);
 
     // GPS parameters, standard INS app
@@ -215,23 +221,26 @@ Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize
     for (int i = 0; i < 3; ++i) {
         cursor = decode(cursor, point_of_interest[i], end);
     }
-    ret.point_of_interest = base::Vector3d(
-        point_of_interest[0], point_of_interest[1], point_of_interest[2]
-    );
+    ret.point_of_interest =
+        base::Vector3d(point_of_interest[0], point_of_interest[1], point_of_interest[2]);
     return ret;
 }
 
-uint8_t* protocol::queryConfigurationParameter(uint8_t* buffer, int index) {
+uint8_t* protocol::queryConfigurationParameter(uint8_t* buffer, int index)
+{
     uint8_t payload[4];
     endianness::encode<uint32_t>(payload, index);
     return formatPacket(buffer, "gP", payload, 4);
 }
 
-static void validateConfigurationParameter(uint8_t const* buffer, int bufferSize,
-                                           int expectedIndex) {
+static void validateConfigurationParameter(uint8_t const* buffer,
+    int bufferSize,
+    int expectedIndex)
+{
     if (bufferSize != 12) {
         throw std::invalid_argument("unexpected buffer size for gP response, "
-                                    "expected 12 but got " + to_string(bufferSize));
+                                    "expected 12 but got " +
+                                    to_string(bufferSize));
     }
     int32_t actualIndex;
     endianness::decode<int32_t>(buffer, actualIndex);
@@ -242,59 +251,71 @@ static void validateConfigurationParameter(uint8_t const* buffer, int bufferSize
     }
 }
 
-template<> Configuration::Orientation protocol::parseConfigurationParameter<Configuration::Orientation>(
-    uint8_t* buffer, int bufferSize, int expectedIndex) {
+template <>
+Configuration::Orientation protocol::parseConfigurationParameter<
+    Configuration::Orientation>(uint8_t* buffer, int bufferSize, int expectedIndex)
+{
     validateConfigurationParameter(buffer, bufferSize, expectedIndex);
-    string orientation = string(
-        reinterpret_cast<char const*>(buffer + 4),
-        reinterpret_cast<char const*>(buffer + 12)
-    );
+    string orientation = string(reinterpret_cast<char const*>(buffer + 4),
+        reinterpret_cast<char const*>(buffer + 12));
     return decodeOrientationString(orientation);
 }
 
-template<> string protocol::parseConfigurationParameter<string>(
-    uint8_t* buffer, int bufferSize, int expectedIndex) {
+template <>
+string protocol::parseConfigurationParameter<string>(uint8_t* buffer,
+    int bufferSize,
+    int expectedIndex)
+{
     validateConfigurationParameter(buffer, bufferSize, expectedIndex);
-    return string(
-        reinterpret_cast<char const*>(buffer + 4),
-        reinterpret_cast<char const*>(buffer + 12)
-    );
+    return string(reinterpret_cast<char const*>(buffer + 4),
+        reinterpret_cast<char const*>(buffer + 12));
 }
 
-template<> int64_t protocol::parseConfigurationParameter<int64_t>(
-    uint8_t* buffer, int bufferSize, int expectedIndex) {
+template <>
+int64_t protocol::parseConfigurationParameter<int64_t>(uint8_t* buffer,
+    int bufferSize,
+    int expectedIndex)
+{
     validateConfigurationParameter(buffer, bufferSize, expectedIndex);
     int64_t value;
     endianness::decode<int64_t>(buffer + 4, value);
     return value;
 }
 
-template<> double protocol::parseConfigurationParameter<double>(
-    uint8_t* buffer, int bufferSize, int expectedIndex) {
+template <>
+double protocol::parseConfigurationParameter<double>(uint8_t* buffer,
+    int bufferSize,
+    int expectedIndex)
+{
     validateConfigurationParameter(buffer, bufferSize, expectedIndex);
     int64_t value;
     endianness::decode<int64_t>(buffer + 4, value);
     return reinterpret_cast<double&>(value);
 }
 
-template<>
-uint8_t* protocol::writeConfiguration<int64_t>(uint8_t* buffer, int index, int64_t value) {
+template <>
+uint8_t* protocol::writeConfiguration<int64_t>(uint8_t* buffer, int index, int64_t value)
+{
     uint8_t payload[12];
     endianness::encode<uint32_t>(payload, index);
     endianness::encode<int64_t>(payload + 4, value);
     return formatPacket(buffer, "uP", payload, 12);
 }
 
-template<>
-uint8_t* protocol::writeConfiguration<double>(uint8_t* buffer, int index, double value) {
+template <>
+uint8_t* protocol::writeConfiguration<double>(uint8_t* buffer, int index, double value)
+{
     uint8_t payload[12];
     endianness::encode<uint32_t>(payload, index);
     endianness::encode<int64_t>(payload + 4, reinterpret_cast<int64_t&>(value));
     return formatPacket(buffer, "uP", payload, 12);
 }
 
-template<>
-uint8_t* protocol::writeConfiguration<std::string>(uint8_t* buffer, int index, std::string value) {
+template <>
+uint8_t* protocol::writeConfiguration<std::string>(uint8_t* buffer,
+    int index,
+    std::string value)
+{
     if (value.length() > 8) {
         throw std::invalid_argument("cannot encode strings longer than 8 characters");
     }
@@ -306,8 +327,9 @@ uint8_t* protocol::writeConfiguration<std::string>(uint8_t* buffer, int index, s
     return formatPacket(buffer, "uP", payload, 12);
 }
 
-uint8_t* protocol::writeConfiguration(
-    uint8_t* buffer, int index, Configuration::Orientation orientation)
+uint8_t* protocol::writeConfiguration(uint8_t* buffer,
+    int index,
+    Configuration::Orientation orientation)
 {
     string encoded = encodeOrientationAxis(orientation.forward) +
                      encodeOrientationAxis(orientation.right) +
@@ -315,12 +337,14 @@ uint8_t* protocol::writeConfiguration(
     return writeConfiguration(buffer, index, encoded);
 }
 
-protocol::WriteStatus protocol::parseWriteConfigurationStatus(
-    uint8_t* buffer, int bufferSize) {
+protocol::WriteStatus protocol::parseWriteConfigurationStatus(uint8_t* buffer,
+    int bufferSize)
+{
     if (bufferSize != 4) {
         throw std::invalid_argument(
             "unexpected reply size for uP (write configuration parameter), "
-            "expected 4 bytes, got " + to_string(bufferSize));
+            "expected 4 bytes, got " +
+            to_string(bufferSize));
     }
 
     int32_t ret;
@@ -339,28 +363,36 @@ protocol::WriteStatus protocol::parseWriteConfigurationStatus(
     }
 }
 
-uint8_t* protocol::queryConfigurationSave(uint8_t* buffer) {
+uint8_t* protocol::queryConfigurationSave(uint8_t* buffer)
+{
     return formatPacket(buffer, "sC", nullptr, 0);
 }
 
-uint8_t* protocol::queryRestoreDefaultConfiguration(uint8_t* buffer) {
+uint8_t* protocol::queryRestoreDefaultConfiguration(uint8_t* buffer)
+{
     return formatPacket(buffer, "rD", nullptr, 0);
 }
 
-uint8_t* protocol::queryReset(uint8_t* buffer) {
+uint8_t* protocol::queryReset(uint8_t* buffer)
+{
     return formatPacket(buffer, "rS", nullptr, 0);
 }
 
-uint8_t* protocol::queryJumpToBootloader(uint8_t* buffer) {
+uint8_t* protocol::queryJumpToBootloader(uint8_t* buffer)
+{
     return formatPacket(buffer, "JI", nullptr, 0);
 }
 
-uint8_t* protocol::queryJumpToApp(uint8_t* buffer) {
+uint8_t* protocol::queryJumpToApp(uint8_t* buffer)
+{
     return formatPacket(buffer, "JA", nullptr, 0);
 }
 
-uint8_t* protocol::queryAppBlockWrite(uint8_t* buffer, uint32_t address,
-                                      uint8_t const* blockData, int blockSize) {
+uint8_t* protocol::queryAppBlockWrite(uint8_t* buffer,
+    uint32_t address,
+    uint8_t const* blockData,
+    int blockSize)
+{
     if (blockSize > MAX_APP_BLOCK_SIZE) {
         throw std::invalid_argument("max app block is 240 bytes");
     }
@@ -380,7 +412,8 @@ uint8_t* protocol::queryStatus(uint8_t* buffer)
     return formatPacket(buffer, "gS", nullptr, 0);
 }
 
-FilterState status_byte2filter_state(uint8_t status_byte) {
+FilterState status_byte2filter_state(uint8_t status_byte)
+{
     FilterState state;
     state.mode = static_cast<FilterMode>(status_byte & 0x7);
     state.status = status_byte >> 3;
@@ -392,8 +425,8 @@ Status protocol::parseStatus(uint8_t const* buffer, int size)
     uint8_t const* end = buffer + size;
     uint8_t const* cursor = buffer;
 
-    uint32_t time, ext_periodic_overflow, gps_updates, last_gps_message,
-             last_gps, last_gps_velocity, gps_rx;
+    uint32_t time, ext_periodic_overflow, gps_updates, last_gps_message, last_gps,
+        last_gps_velocity, gps_rx;
     uint16_t gps_overflows, hdop;
     uint8_t temperature_C, status_byte;
     cursor = endianness::decode(cursor, time, end);
@@ -427,19 +460,20 @@ Status protocol::parseStatus(uint8_t const* buffer, int size)
     return ret;
 }
 
-template<typename T>
-T protocol::valueNED2NWU(T neu){
+template <typename T> T protocol::valueNED2NWU(T neu)
+{
     neu = RotNED2NWU * neu;
     return neu;
 }
 
-template<typename H>
-H protocol::covarianceNED2NWU(H neu){
+template <typename H> H protocol::covarianceNED2NWU(H neu)
+{
     neu = RotNED2NWU * neu * RotNWU2NED;
     return neu;
 }
 
-PeriodicUpdate protocol::parseE2Output(uint8_t const* buffer, int bufferSize) {
+PeriodicUpdate protocol::parseE2Output(uint8_t const* buffer, int bufferSize)
+{
     uint8_t const* end = buffer + bufferSize;
 
     base::samples::RigidBodyState rbs;
@@ -465,29 +499,25 @@ PeriodicUpdate protocol::parseE2Output(uint8_t const* buffer, int bufferSize) {
     uint8_t turn_switch = *cursor++;
 
     if (cursor != end) {
-        throw std::invalid_argument(
-            "too many bytes in buffer: got " + to_string(bufferSize) +
-            ", expected " + to_string(cursor - buffer));
+        throw std::invalid_argument("too many bytes in buffer: got " +
+                                    to_string(bufferSize) + ", expected " +
+                                    to_string(cursor - buffer));
     }
 
     static const double deg2rad = M_PI / 180.0;
     static const double g2si = 9.80665;
 
-    rbs.orientation =
-        Eigen::AngleAxisd(values[2] * deg2rad, Eigen::Vector3d::UnitZ()) *
-        Eigen::AngleAxisd(values[1] * deg2rad, Eigen::Vector3d::UnitY()) *
-        Eigen::AngleAxisd(values[0] * deg2rad, Eigen::Vector3d::UnitX());
+    rbs.orientation = Eigen::AngleAxisd(values[2] * deg2rad, Eigen::Vector3d::UnitZ()) *
+                      Eigen::AngleAxisd(values[1] * deg2rad, Eigen::Vector3d::UnitY()) *
+                      Eigen::AngleAxisd(values[0] * deg2rad, Eigen::Vector3d::UnitX());
     rbs.orientation = valueNED2NWU(rbs.orientation);
 
-    rba.acceleration = Eigen::Vector3d(
-        values[3], values[4], values[5]) * g2si;
-    rbs.angular_velocity = Eigen::Vector3d(
-        values[9], values[10], values[11]) * deg2rad;
+    rba.acceleration = Eigen::Vector3d(values[3], values[4], values[5]) * g2si;
+    rbs.angular_velocity = Eigen::Vector3d(values[9], values[10], values[11]) * deg2rad;
 
     PeriodicUpdate result;
     if (op_mode == OPMODE_INS) {
-        rbs.velocity = Eigen::Vector3d(
-            values[15], -values[16], -values[17]);
+        rbs.velocity = Eigen::Vector3d(values[15], -values[16], -values[17]);
 
         result.latitude = base::Angle::fromDeg(lat_lon_alt[0]);
         result.longitude = base::Angle::fromDeg(lat_lon_alt[1]);
@@ -510,7 +540,8 @@ PeriodicUpdate protocol::parseE2Output(uint8_t const* buffer, int bufferSize) {
     return result;
 }
 
-PeriodicUpdate protocol::parseE4Output(uint8_t const* buffer, int bufferSize) {
+PeriodicUpdate protocol::parseE4Output(uint8_t const* buffer, int bufferSize)
+{
     uint8_t const* end = buffer + bufferSize;
 
     base::samples::RigidBodyState rbs;
@@ -549,8 +580,7 @@ PeriodicUpdate protocol::parseE4Output(uint8_t const* buffer, int bufferSize) {
 
     PeriodicUpdate result;
     if (state.mode == OPMODE_INS) {
-        rbs.velocity = Eigen::Vector3d(
-            values[7], -values[8], -values[9]);
+        rbs.velocity = Eigen::Vector3d(values[7], -values[8], -values[9]);
 
         result.latitude = base::Angle::fromDeg(lat_lon_alt[0]);
         result.longitude = base::Angle::fromDeg(lat_lon_alt[1]);
@@ -559,8 +589,7 @@ PeriodicUpdate protocol::parseE4Output(uint8_t const* buffer, int bufferSize) {
 
     MagneticInfo magnetic_info;
     magnetic_info.time = rbs.time;
-    magnetic_info.magnetometers =
-        Eigen::Vector3d(magInfo[0], magInfo[1], magInfo[2]);
+    magnetic_info.magnetometers = Eigen::Vector3d(magInfo[0], magInfo[1], magInfo[2]);
     magnetic_info.measured_euler_angles =
         Eigen::Vector3d(magInfo[3], magInfo[4], magInfo[5]);
     magnetic_info.declination = base::Angle::fromRad(magInfo[6]);

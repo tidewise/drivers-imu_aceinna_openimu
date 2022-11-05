@@ -1,8 +1,8 @@
 #ifndef IMU_ACEINNA_OPENIMU_STATUS_HPP
 #define IMU_ACEINNA_OPENIMU_STATUS_HPP
 
-#include <base/Time.hpp>
 #include <base/Temperature.hpp>
+#include <base/Time.hpp>
 #include <imu_aceinna_openimu/FilterState.hpp>
 
 namespace imu_aceinna_openimu {

@@ -2,10 +2,10 @@
 #define IMU_ACEINNA_OPENIMU_PROTOCOL_HPP
 
 #include <cstdint>
-#include <string>
 #include <imu_aceinna_openimu/Configuration.hpp>
 #include <imu_aceinna_openimu/PeriodicUpdate.hpp>
 #include <imu_aceinna_openimu/Status.hpp>
+#include <string>
 
 namespace imu_aceinna_openimu {
     namespace protocol {
@@ -22,8 +22,10 @@ namespace imu_aceinna_openimu {
         // Biggest block that can be written when flashing the firmware
         static const int MAX_APP_BLOCK_SIZE = 240;
         // Transformation that rotates by PI the X axis. Usefull for NED/NWU convertions
-        static const base::Matrix3d RotNED2NWU(base::AngleAxisd(M_PI, base::Vector3d::UnitX()));
-        static const base::Matrix3d RotNWU2NED(base::AngleAxisd(-M_PI, base::Vector3d::UnitX()));
+        static const base::Matrix3d RotNED2NWU(
+            base::AngleAxisd(M_PI, base::Vector3d::UnitX()));
+        static const base::Matrix3d RotNWU2NED(
+            base::AngleAxisd(-M_PI, base::Vector3d::UnitX()));
 
         enum WriteStatus {
             WRITE_STATUS_OK = 0,
@@ -48,8 +50,10 @@ namespace imu_aceinna_openimu {
 
         /** Generic packet formatting
          */
-        uint8_t* formatPacket(uint8_t* buffer, char const* code,
-                              uint8_t const* payload, int size);
+        uint8_t* formatPacket(uint8_t* buffer,
+            char const* code,
+            uint8_t const* payload,
+            int size);
 
         /** Writes a device info query (pG) to the given buffer
          */
@@ -78,12 +82,13 @@ namespace imu_aceinna_openimu {
          * T can only be int64_t and std::string. Any other type will fail at
          * linking time
          */
-        template<typename T>
+        template <typename T>
         uint8_t* writeConfiguration(uint8_t* buffer, int index, T value);
 
         /** Write an orientation configuration parameters */
-        uint8_t* writeConfiguration(uint8_t* buffer, int index,
-                                    Configuration::Orientation axes);
+        uint8_t* writeConfiguration(uint8_t* buffer,
+            int index,
+            Configuration::Orientation axes);
 
         /** Parse the status from the configuration write reply */
         WriteStatus parseWriteConfigurationStatus(uint8_t* buffer, int bufferSize);
@@ -99,7 +104,7 @@ namespace imu_aceinna_openimu {
          * T can only be int64_t and std::string. Any other type will fail at
          * linking time
          */
-        template<typename T>
+        template <typename T>
         T parseConfigurationParameter(uint8_t* buffer, int bufferSize, int expectedIndex);
 
         /** Restore default configuration and save it to flash
@@ -124,8 +129,10 @@ namespace imu_aceinna_openimu {
 
         /** Write an app block
          */
-        uint8_t* queryAppBlockWrite(uint8_t* buffer, uint32_t address,
-                                    uint8_t const* blockData, int blockSize);
+        uint8_t* queryAppBlockWrite(uint8_t* buffer,
+            uint32_t address,
+            uint8_t const* blockData,
+            int blockSize);
 
         /** Query the unit status (gS)
          */
@@ -135,11 +142,9 @@ namespace imu_aceinna_openimu {
          */
         Status parseStatus(uint8_t const* buffer, int size);
 
-        template<typename T>
-        T valueNED2NWU(T neu);
+        template <typename T> T valueNED2NWU(T neu);
 
-        template<typename H>
-        H covarianceNED2NWU(H neu);
+        template <typename H> H covarianceNED2NWU(H neu);
 
         /** Parse the stock INS output message (e2) */
         PeriodicUpdate parseE2Output(uint8_t const* buffer, int bufferSize);

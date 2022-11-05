@@ -1,11 +1,11 @@
 #ifndef IMU_ACEINNA_OPENIMU_DRIVER_HPP
 #define IMU_ACEINNA_OPENIMU_DRIVER_HPP
 
-#include <iodrivers_base/Driver.hpp>
-#include <imu_aceinna_openimu/DeviceInfo.hpp>
 #include <imu_aceinna_openimu/Configuration.hpp>
+#include <imu_aceinna_openimu/DeviceInfo.hpp>
 #include <imu_aceinna_openimu/PeriodicUpdate.hpp>
 #include <imu_aceinna_openimu/Status.hpp>
+#include <iodrivers_base/Driver.hpp>
 #include <iosfwd>
 
 namespace imu_aceinna_openimu {
@@ -22,16 +22,17 @@ namespace imu_aceinna_openimu {
         Status mStatus;
         PeriodicUpdate mPeriodicUpdate;
 
-        template<typename T>
+        template <typename T>
         void writeConfigurationGeneric(int index, T value, bool validate);
 
         virtual int extractPacket(uint8_t const* buffer, size_t buffer_size) const;
 
         /** Read packets until a packet of type 'command' is found
          */
-        int readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* command,
-                             base::Time timeout);
-
+        int readPacketsUntil(uint8_t* buffer,
+            int bufferSize,
+            uint8_t const* command,
+            base::Time timeout);
 
         /** @overload */
         int readPacketsUntil(uint8_t* buffer, int bufferSize, uint8_t const* command);
@@ -73,7 +74,8 @@ namespace imu_aceinna_openimu {
         void queryRestoreDefaultConfiguration();
 
         /** Write a whole configuration */
-        void writeConfiguration(Configuration const& configuration, bool validate = false);
+        void writeConfiguration(Configuration const& configuration,
+            bool validate = false);
 
         /** Write a single configuration parameter
          *
@@ -84,7 +86,7 @@ namespace imu_aceinna_openimu {
          * @param validate if true, the method will re-read the configuration parameter
          *        to ensure it has been properly updated
          */
-        template<typename T>
+        template <typename T>
         void writeConfiguration(int index, T value, bool validate = false);
 
         /** Configure the periodic packet */
@@ -127,8 +129,7 @@ namespace imu_aceinna_openimu {
          * The type must either be int64_t or std::string. Other values will fail
          * at link time.
          */
-        template<typename T>
-        T readConfiguration(int index);
+        template <typename T> T readConfiguration(int index);
 
         /** Switch to bootloader mode
          *
@@ -154,13 +155,14 @@ namespace imu_aceinna_openimu {
 
         /** Return the last IMU status received by processOne
          *
-         * This is named getIMUStatus() to avoid clashing with iodrivers_base::Driver::getStatus()
+         * This is named getIMUStatus() to avoid clashing with
+         * iodrivers_base::Driver::getStatus()
          */
         Status getIMUStatus() const;
 
         /** Write a new app firmware */
         void writeFirmware(std::vector<uint8_t> const& data,
-                           std::ostream& progress = nullStream());
+            std::ostream& progress = nullStream());
     };
 }
 

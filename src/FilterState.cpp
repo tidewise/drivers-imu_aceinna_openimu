@@ -3,7 +3,8 @@
 using namespace std;
 using namespace imu_aceinna_openimu;
 
-string FilterState::toString() const {
+string FilterState::toString() const
+{
     string result;
     if (mode == OPMODE_STABILIZING) {
         result = "STABILIZING";
