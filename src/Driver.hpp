@@ -3,6 +3,7 @@
 
 #include <imu_aceinna_openimu/Configuration.hpp>
 #include <imu_aceinna_openimu/DeviceInfo.hpp>
+#include <imu_aceinna_openimu/MagneticCalibration.hpp>
 #include <imu_aceinna_openimu/PeriodicUpdate.hpp>
 #include <imu_aceinna_openimu/Status.hpp>
 #include <iodrivers_base/Driver.hpp>
@@ -119,6 +120,9 @@ namespace imu_aceinna_openimu {
 
         /** Configure the point of interest */
         void writePointOfInterest(base::Vector3d const& point);
+
+        /** Configure the magnetic distortion compensation */
+        void writeMagneticCalibration(MagneticCalibration const& calibration);
 
         /** Save the configuration to flash */
         void saveConfiguration();

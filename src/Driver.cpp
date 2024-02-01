@@ -234,6 +234,14 @@ void Driver::writePointOfInterest(base::Vector3d const& point)
     writeConfiguration<double>(19, point.z());
 }
 
+void Driver::writeMagneticCalibration(MagneticCalibration const& calibration)
+{
+    writeConfiguration<double>(10, calibration.hard_iron.x());
+    writeConfiguration<double>(11, calibration.hard_iron.y());
+    writeConfiguration<double>(12, calibration.soft_iron_ratio);
+    writeConfiguration<double>(13, calibration.soft_iron_angle.getRad());
+}
+
 int Driver::extractPacket(uint8_t const* buffer, size_t bufferSize) const
 {
     return protocol::extractPacket(buffer, bufferSize);
