@@ -94,8 +94,8 @@ get.ellipse <- function( fit, n=360 )
   # n is the number of points to render
 
   tt <- seq(0, 2*pi, length=n)
-  sa <- sin(fit$angle)
-  ca <- cos(fit$angle)
+  sa <- sin(fit$angle + pi/2)
+  ca <- cos(fit$angle + pi/2)
   ct <- cos(tt)
   st <- sin(tt)
 
