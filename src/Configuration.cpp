@@ -51,6 +51,17 @@ string imu_aceinna_openimu::to_string(Configuration::Orientation const& o)
     return axisToUser(o.forward) + axisToUser(o.right) + axisToUser(o.down);
 }
 
+bool Configuration::operator ==(Configuration const& other) const {
+    return !(*this != other);
+}
+
+bool Configuration::operator !=(Configuration const& other) const {
+    return
+        needsReset(other) ||
+        other.periodic_packet_rate != periodic_packet_rate ||
+        other.periodic_packet_type != periodic_packet_type;
+}
+
 bool Configuration::needsReset(Configuration const& original) const {
     return
         original.acceleration_low_pass_filter != acceleration_low_pass_filter ||
@@ -62,6 +73,6 @@ bool Configuration::needsReset(Configuration const& original) const {
         original.hard_iron[1] != hard_iron[1] ||
         original.soft_iron_ratio != soft_iron_ratio ||
         original.soft_iron_angle != soft_iron_angle ||
-        (original.lever_arm - lever_arm).norm() < 1e-3 ||
-        (original.point_of_interest - point_of_interest).norm() < 1e-3;
+        (original.lever_arm - lever_arm).norm() > 1e-3 ||
+        (original.point_of_interest - point_of_interest).norm() > 1e-3;
 }

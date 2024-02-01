@@ -56,6 +56,9 @@ namespace imu_aceinna_openimu {
         base::Vector3d lever_arm;
         base::Vector3d point_of_interest;
 
+        bool operator ==(Configuration const& other) const;
+        bool operator !=(Configuration const& other) const;
+
         /** Whether the IMU needs to be reset because of changes from original to self */
         bool needsReset(Configuration const& original) const;
     };
