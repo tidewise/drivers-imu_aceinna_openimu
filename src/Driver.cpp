@@ -112,6 +112,24 @@ void Driver::queryReset()
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
 }
 
+Configuration Driver::reset(int tries)
+{
+    queryReset();
+
+    for (int i = 0; i < tries; ++i) {
+        try {
+            return readConfiguration();
+        }
+        catch(iodrivers_base::TimeoutError&) {
+        }
+    }
+
+    throw ResetFailedError(
+        "failed to communicate with the IMU after reset, tried " +
+        std::to_string(tries) + " times"
+    );
+}
+
 void Driver::queryRestoreDefaultConfiguration()
 {
     auto packetEnd = protocol::queryRestoreDefaultConfiguration(mWriteBuffer);
