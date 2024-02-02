@@ -267,6 +267,12 @@ string protocol::parseConfigurationParameter<string>(uint8_t* buffer,
     int expectedIndex)
 {
     validateConfigurationParameter(buffer, bufferSize, expectedIndex);
+    for (size_t string_end = 4; string_end < 12; ++string_end) {
+        if (buffer[string_end] == 0) {
+            return string(reinterpret_cast<char const*>(buffer + 4),
+                reinterpret_cast<char const*>(buffer + string_end));
+        }
+    }
     return string(reinterpret_cast<char const*>(buffer + 4),
         reinterpret_cast<char const*>(buffer + 12));
 }

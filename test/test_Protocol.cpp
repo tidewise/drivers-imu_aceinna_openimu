@@ -451,6 +451,13 @@ TEST_F(ProtocolTest, it_parses_a_single_string_parameter)
     ASSERT_EQ("abcdefgh", value);
 }
 
+TEST_F(ProtocolTest, it_handles_zeroes_in_string_parameter_reads)
+{
+    std::vector<uint8_t> buffer = {2, 0, 0, 0, 'a', 'b', 0, 'd', 'e', 'f', 'g', 'h'};
+    string value = parseConfigurationParameter<string>(&buffer[0], 12, 2);
+    ASSERT_EQ("ab", value);
+}
+
 TEST_F(ProtocolTest, it_throws_if_the_buffer_is_bigger_than_12_bytes)
 {
     ASSERT_THROW(
