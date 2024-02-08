@@ -3,6 +3,7 @@
 
 #include <imu_aceinna_openimu/Configuration.hpp>
 #include <imu_aceinna_openimu/DeviceInfo.hpp>
+#include <imu_aceinna_openimu/MagneticCalibration.hpp>
 #include <imu_aceinna_openimu/PeriodicUpdate.hpp>
 #include <imu_aceinna_openimu/Status.hpp>
 #include <iodrivers_base/Driver.hpp>
@@ -45,6 +46,10 @@ namespace imu_aceinna_openimu {
     public:
         Driver();
 
+        struct ResetFailedError : public std::runtime_error {
+            using std::runtime_error::runtime_error;
+        };
+
         struct UnsupportedDevice : public std::runtime_error {
             using std::runtime_error::runtime_error;
         };
@@ -69,6 +74,16 @@ namespace imu_aceinna_openimu {
 
         /** Reset the unit */
         void queryReset();
+
+        /** Reset the unit and wait for it to be alive again
+         *
+         * The method tries to read the configuration to check whether the IMU
+         * is alive.
+         *
+         * @param tries how many times the method tries to read configuration before
+         *    bailing out.
+        */
+        Configuration reset(int tries = 10);
 
         /** Restore the default configuration and save it to flash */
         void queryRestoreDefaultConfiguration();
@@ -119,6 +134,9 @@ namespace imu_aceinna_openimu {
 
         /** Configure the point of interest */
         void writePointOfInterest(base::Vector3d const& point);
+
+        /** Configure the magnetic distortion compensation */
+        void writeMagneticCalibration(MagneticCalibration const& calibration);
 
         /** Save the configuration to flash */
         void saveConfiguration();

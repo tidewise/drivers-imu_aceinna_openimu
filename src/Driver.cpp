@@ -112,6 +112,24 @@ void Driver::queryReset()
     writePacket(mWriteBuffer, packetEnd - mWriteBuffer);
 }
 
+Configuration Driver::reset(int tries)
+{
+    queryReset();
+
+    for (int i = 0; i < tries; ++i) {
+        try {
+            return readConfiguration();
+        }
+        catch(iodrivers_base::TimeoutError&) {
+        }
+    }
+
+    throw ResetFailedError(
+        "failed to communicate with the IMU after reset, tried " +
+        std::to_string(tries) + " times"
+    );
+}
+
 void Driver::queryRestoreDefaultConfiguration()
 {
     auto packetEnd = protocol::queryRestoreDefaultConfiguration(mWriteBuffer);
@@ -232,6 +250,14 @@ void Driver::writePointOfInterest(base::Vector3d const& point)
     writeConfiguration<double>(17, point.x());
     writeConfiguration<double>(18, point.y());
     writeConfiguration<double>(19, point.z());
+}
+
+void Driver::writeMagneticCalibration(MagneticCalibration const& calibration)
+{
+    writeConfiguration<double>(10, calibration.hard_iron.x());
+    writeConfiguration<double>(11, calibration.hard_iron.y());
+    writeConfiguration<double>(12, calibration.soft_iron_ratio);
+    writeConfiguration<double>(13, calibration.soft_iron_angle.getRad());
 }
 
 int Driver::extractPacket(uint8_t const* buffer, size_t bufferSize) const

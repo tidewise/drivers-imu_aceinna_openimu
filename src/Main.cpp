@@ -303,6 +303,8 @@ int main(int argc, char** argv)
         driver.openURI(uri);
         driver.validateDevice();
         driver.saveConfiguration();
+        std::cout << "Confguration written on permanent storage\n"
+                     "Some parameter changes might need a reset to be effective\n";
     }
     else if (cmd == "set-rate") {
         if (argc != 4) {
@@ -404,7 +406,8 @@ int main(int argc, char** argv)
     }
     else if (cmd == "reset") {
         driver.openURI(uri);
-        driver.queryReset();
+        driver.reset();
+        std::cout << "IMU successfully reset" << std::endl;
     }
     else {
         cerr << "unexpected command " << cmd << endl;
