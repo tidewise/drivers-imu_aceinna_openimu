@@ -117,6 +117,7 @@ int usage()
         << "  info              display information about the connected unit\n"
         << "  poll-pose         periodically display the pose output\n"
         << "  poll-mag          periodically display magnetic measurements\n"
+        << "  reset             resets the IMU\n"
         << "\n"
         << "  set NAME VALUE    set a configuration parameter. Call without\n"
         << "                    arguments for a list)\n"
