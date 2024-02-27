@@ -37,11 +37,8 @@ namespace imu_aceinna_openimu {
         /** Quaternion covariance as maintained internally by the IMU
          *
          * See https://openimu.readthedocs.io/en/latest/algorithms/Process_Covariance.html
-         *
-         * These are the upper coefficients (the matrix is symmetric). If it is present,
-         * the vector contains 10 elements. Otherwise, it is left empty.
          */
-        base::Matrix4d covQuaternion;
+        base::Matrix4d covQuaternion = base::Matrix4d::Constant(base::unknown<double>());
 
         FilterState filter_state;
 
