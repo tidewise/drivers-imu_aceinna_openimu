@@ -30,9 +30,9 @@ namespace imu_aceinna_openimu {
 
         /** Euler angle measurement from accelerometers and magnetometers
          *
-         * These values are taken directly from the EKF. They are the measured
-         * pitch and roll computed from the accelerometers, and the measured
-         * yaw computed from the magnetic field. Declination is already applied
+         * They are the unfiltered measurements. The pitch and roll are measured
+         * from the direction of gravity (from the accelerometers) and the yaw
+         * from the magnetometers. Declination is already applied if in INS mode.
          */
         base::Vector3d measured_euler_angles;
     };
