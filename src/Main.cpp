@@ -270,6 +270,60 @@ int main(int argc, char** argv)
             usleep(poll_period_usec);
         }
     }
+    else if (cmd == "covariances") {
+        driver.openURI(uri);
+        driver.validateDevice();
+        driver.writePeriodicPacketConfiguration("e5", 10);
+        while (true) {
+            if (driver.processOne()) {
+                auto state = driver.getLastPeriodicUpdate();
+                std::cout << state.rbs.time << " " << state.filter_state.toString()
+                          << "\nPosition\n"
+                          << " " << setprecision(1) << state.rbs.cov_position
+                          << "\nVelocity\n"
+                          << " " << setprecision(1) << state.rbs.cov_velocity
+                          << "\nQuaternion\n"
+                          << " " << setprecision(1) << state.covQuaternion
+                          << std::endl;
+                break;
+            }
+        }
+    }
+    else if (cmd == "poll-e5") {
+        int poll_period_usec = 100000;
+        if (argc == 4) {
+            poll_period_usec = atof(argv[3]) * 1000000;
+        }
+
+        driver.openURI(uri);
+        driver.validateDevice();
+        driver.writePeriodicPacketConfiguration("e5", 10);
+        while (true) {
+            if (driver.processOne()) {
+                auto state = driver.getLastPeriodicUpdate();
+                std::cout << state.rbs.time << " " << state.filter_state.toString()
+                          << fixed << " " << setprecision(1)
+                          << base::getRoll(state.rbs.orientation) * 180 / M_PI << " "
+                          << " " << setprecision(1)
+                          << base::getPitch(state.rbs.orientation) * 180 / M_PI << " "
+                          << " " << setprecision(1)
+                          << base::getYaw(state.rbs.orientation) * 180 / M_PI << " "
+                          << " " << setprecision(1) << state.latitude.getDeg() << " "
+                          << " " << setprecision(1) << state.longitude.getDeg() << " "
+                          << " " << setprecision(1) << state.rbs.position.z() << " "
+                          << " " << setprecision(1) << state.rbs.velocity.x() << " "
+                          << " " << setprecision(1) << state.rbs.velocity.y() << " "
+                          << " " << setprecision(1) << state.rbs.velocity.z() << " "
+                          << " " << setprecision(1) << state.rba.acceleration.x() << " "
+                          << " " << setprecision(1) << state.rba.acceleration.y() << " "
+                          << " " << setprecision(1) << state.rba.acceleration.z() << " "
+                          << " " << setprecision(1) << state.board_temperature.getCelsius()
+                          << std::endl;
+            }
+
+            usleep(poll_period_usec);
+        }
+    }
     else if (cmd == "poll-mag") {
         int poll_period_usec = 100000;
         if (argc == 4) {
