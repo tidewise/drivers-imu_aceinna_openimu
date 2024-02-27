@@ -41,7 +41,7 @@ namespace imu_aceinna_openimu {
          * These are the upper coefficients (the matrix is symmetric). If it is present,
          * the vector contains 10 elements. Otherwise, it is left empty.
          */
-        std::vector<float> covQuaternion;
+        base::Matrix4d covQuaternion;
 
         FilterState filter_state;
 

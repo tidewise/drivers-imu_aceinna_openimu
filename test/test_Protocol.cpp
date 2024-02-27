@@ -629,22 +629,28 @@ TEST_F(ProtocolTest, it_parses_a_e5_INS_message)
         0, 0, 160, 65, // [20, 21, 22] -> accelerations[3]
         0, 0, 168, 65,
         0, 0, 176, 65,
-        0, 0, 184, 65, // [23, 24, 25] -> covPosition[3]
+        0, 0, 184, 65, // [23, 24, 25, 26, 27, 28] -> covPosition[6]
         0, 0, 192, 65,
         0, 0, 200, 65,
-        0, 0, 208, 65, // [26, 27, 28] -> covVelocity[3]
+        0, 0, 208, 65,
         0, 0, 216, 65,
         0, 0, 224, 65,
-        0, 0, 232, 65, // [29, 30, 31, 32, 33, 34, 35, 36, 37, 38] -> covQuaternion
+        0, 0, 232, 65, // [29, 30, 31, 32, 33, 34] -> covVelocity[6]
         0, 0, 240, 65,
         0, 0, 248, 65,
         0, 0, 0, 66,
         0, 0, 4, 66,
         0, 0, 8, 66,
-        0, 0, 12, 66,
+        0, 0, 12, 66, // [35, 36, 37, 38, 39, 40, 41, 42, 43, 44] -> covQuaternion[10]
         0, 0, 16, 66,
         0, 0, 20, 66,
-        0, 0, 24, 66
+        0, 0, 24, 66,
+        0, 0, 28, 66,
+        0, 0, 32, 66,
+        0, 0, 36, 66,
+        0, 0, 40, 66,
+        0, 0, 44, 66,
+        0, 0, 48, 66
     };
 
     auto expected_time = base::Time::fromMilliseconds(0x40302010);
@@ -673,15 +679,28 @@ TEST_F(ProtocolTest, it_parses_a_e5_INS_message)
     ASSERT_NEAR(update.magnetic_info.declination.getRad(), base::Angle::fromRad(19).getRad(), 1e-6);
     ASSERT_EQ(update.rba.time, expected_time);
     ASSERT_TRUE(update.rba.acceleration.isApprox(Eigen::Vector3d(20, 21, 22)));
-    ASSERT_TRUE(update.rbs.cov_position.isApprox(
-        Eigen::Vector3d(23, 24, 25).asDiagonal().toDenseMatrix()));
-    ASSERT_TRUE(update.rbs.cov_velocity.isApprox(
-        Eigen::Vector3d(26, 27, 28).asDiagonal().toDenseMatrix()));
 
-    std::vector<float> expectedCovQuaternion {
-        29, 30, 31, 32, 33, 34, 35, 36, 37, 38
-    };
-    ASSERT_THAT(update.covQuaternion, ElementsAreArray(expectedCovQuaternion));
+    Eigen::Matrix3d expectedCovPosition;
+    expectedCovPosition
+        << 23.0, 24.0, 25.0,
+           24.0, 26.0, 27.0,
+           25.0, 27.0, 28.0;
+    ASSERT_TRUE(update.rbs.cov_position.isApprox(expectedCovPosition));
+
+    Eigen::Matrix3d expectedCovVelocity;
+    expectedCovVelocity
+        << 29.0, 30.0, 31.0,
+           30.0, 32.0, 33.0,
+           31.0, 33.0, 34.0;
+    ASSERT_TRUE(update.rbs.cov_velocity.isApprox(expectedCovVelocity));
+
+    Eigen::Matrix4d expectedCovQuaternion;
+    expectedCovQuaternion
+        << 35.0, 36.0, 37.0, 38.0,
+           36.0, 39.0, 40.0, 41.0,
+           37.0, 40.0, 42.0, 43.0,
+           38.0, 41.0, 43.0, 44.0;
+    ASSERT_TRUE(update.covQuaternion.isApprox(expectedCovQuaternion));
     ASSERT_EQ(update.board_temperature.getCelsius(), -30);
 }
 

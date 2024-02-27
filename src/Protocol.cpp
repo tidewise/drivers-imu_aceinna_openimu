@@ -601,6 +601,32 @@ PeriodicUpdate protocol::parseE4Output(uint8_t const* buffer, int bufferSize)
     return result;
 }
 
+static Eigen::Matrix3d covarianceMatrix(std::array<float, 6> const& v) {
+    Eigen::Matrix3d m = Eigen::Matrix3d::Zero();
+    m(0, 0) = v[0];
+    m(0, 1) = v[1];
+    m(0, 2) = v[2];
+    m(1, 1) = v[3];
+    m(1, 2) = v[4];
+    m(2, 2) = v[5];
+    return m + m.triangularView<Eigen::StrictlyUpper>().transpose().toDenseMatrix();
+}
+
+static Eigen::Matrix4d covarianceMatrix(std::array<float, 10> const& v) {
+    Eigen::Matrix4d m = Eigen::Matrix4d::Zero();
+    m(0, 0) = v[0];
+    m(0, 1) = v[1];
+    m(0, 2) = v[2];
+    m(0, 3) = v[3];
+    m(1, 1) = v[4];
+    m(1, 2) = v[5];
+    m(1, 3) = v[6];
+    m(2, 2) = v[7];
+    m(2, 3) = v[8];
+    m(3, 3) = v[9];
+    return m + m.triangularView<Eigen::StrictlyUpper>().transpose().toDenseMatrix();
+}
+
 PeriodicUpdate protocol::parseE5Output(uint8_t const* buffer, int bufferSize)
 {
     uint8_t const* end = buffer + bufferSize;
@@ -632,15 +658,15 @@ PeriodicUpdate protocol::parseE5Output(uint8_t const* buffer, int bufferSize)
     for (int i = 0; i < 3; ++i) {
         cursor = endianness::decode<float>(cursor, accelerations[i], end);
     }
-    float covPosition[3];
-    for (int i = 0; i < 3; ++i) {
+    std::array<float, 6> covPosition;
+    for (int i = 0; i < 6; ++i) {
         cursor = endianness::decode<float>(cursor, covPosition[i], end);
     }
-    float covVelocity[3];
-    for (int i = 0; i < 3; ++i) {
+    std::array<float, 6> covVelocity;
+    for (int i = 0; i < 6; ++i) {
         cursor = endianness::decode<float>(cursor, covVelocity[i], end);
     }
-    float covQuaternions[10];
+    std::array<float, 10> covQuaternions;
     for (int i = 0; i < 10; ++i) {
         cursor = endianness::decode<float>(cursor, covQuaternions[i], end);
     }
@@ -658,12 +684,8 @@ PeriodicUpdate protocol::parseE5Output(uint8_t const* buffer, int bufferSize)
     rbs.orientation = Eigen::Quaterniond(values[0], values[1], values[2], values[3]);
     rbs.orientation = valueNED2NWU(rbs.orientation);
     rbs.angular_velocity = Eigen::Vector3d(values[4], values[5], values[6]);
-    rbs.cov_position =
-        base::Vector3d(covPosition[0], covPosition[1], covPosition[2])
-        .asDiagonal();
-    rbs.cov_velocity =
-        base::Vector3d(covVelocity[0], covVelocity[1], covVelocity[2])
-        .asDiagonal();
+    rbs.cov_position = covarianceMatrix(covPosition);
+    rbs.cov_velocity = covarianceMatrix(covVelocity);
 
     PeriodicUpdate result;
     if (state.mode == OPMODE_INS) {
@@ -689,9 +711,7 @@ PeriodicUpdate protocol::parseE5Output(uint8_t const* buffer, int bufferSize)
 
     result.rbs = rbs;
     result.rba = rba;
-    result.covQuaternion = std::vector<float>(
-        covQuaternions, covQuaternions + 10
-    );
+    result.covQuaternion = covarianceMatrix(covQuaternions);
     result.magnetic_info = magnetic_info;
     result.board_temperature = base::Temperature::fromCelsius(board_temperature_C);
     result.filter_state = state;
