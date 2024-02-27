@@ -3,6 +3,7 @@
 
 #include <base/Angle.hpp>
 #include <base/Float.hpp>
+#include <base/Temperature.hpp>
 #include <base/samples/RigidBodyAcceleration.hpp>
 #include <base/samples/RigidBodyState.hpp>
 #include <gps_base/UTMConverter.hpp>
@@ -33,10 +34,21 @@ namespace imu_aceinna_openimu {
          */
         base::samples::RigidBodyAcceleration rba;
 
+        /** Quaternion covariance as maintained internally by the IMU
+         *
+         * See https://openimu.readthedocs.io/en/latest/algorithms/Process_Covariance.html
+         *
+         * These are the upper coefficients (the matrix is symmetric). If it is present,
+         * the vector contains 10 elements. Otherwise, it is left empty.
+         */
+        std::vector<float> covQuaternion;
+
         FilterState filter_state;
 
         base::Angle latitude;
         base::Angle longitude;
+
+        base::Temperature board_temperature;
 
         void computeNWUPosition(gps_base::UTMConverter const& converter);
     };

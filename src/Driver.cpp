@@ -317,6 +317,10 @@ bool Driver::processOne(uint8_t const* type, uint8_t const* payload, uint8_t pay
         mPeriodicUpdate = protocol::parseE4Output(payload, payloadLen);
         return true;
     }
+    else if (type[0] == 'e' && type[1] == '5') {
+        mPeriodicUpdate = protocol::parseE5Output(payload, payloadLen);
+        return true;
+    }
     return false;
 }
 

@@ -466,12 +466,6 @@ Status protocol::parseStatus(uint8_t const* buffer, int size)
     return ret;
 }
 
-template <typename T> T protocol::valueNED2NWU(T neu)
-{
-    neu = RotNED2NWU * neu;
-    return neu;
-}
-
 template <typename H> H protocol::covarianceNED2NWU(H neu)
 {
     neu = RotNED2NWU * neu * RotNWU2NED;
@@ -603,6 +597,103 @@ PeriodicUpdate protocol::parseE4Output(uint8_t const* buffer, int bufferSize)
     result.rbs = rbs;
     result.rba = rba;
     result.magnetic_info = magnetic_info;
+    result.filter_state = state;
+    return result;
+}
+
+PeriodicUpdate protocol::parseE5Output(uint8_t const* buffer, int bufferSize)
+{
+    uint8_t const* end = buffer + bufferSize;
+
+    uint8_t const* cursor = buffer;
+    uint32_t time_ms;
+    cursor = endianness::decode<uint32_t>(buffer, time_ms, end);
+    uint8_t filterFlags = cursor[0];
+    ++cursor;
+    int8_t board_temperature_C = *reinterpret_cast<int8_t const*>(cursor);
+    ++cursor;
+
+    float values[10];
+    for (int i = 0; i < 10; ++i) {
+        cursor = endianness::decode<float>(cursor, values[i], end);
+    }
+    double lat_lon[2];
+    for (int i = 0; i < 2; ++i) {
+        cursor = endianness::decode<double>(cursor, lat_lon[i], end);
+    }
+    float alt;
+    cursor = endianness::decode<float>(cursor, alt, end);
+
+    float magInfo[7];
+    for (int i = 0; i < 7; ++i) {
+        cursor = endianness::decode<float>(cursor, magInfo[i], end);
+    }
+    float accelerations[3];
+    for (int i = 0; i < 3; ++i) {
+        cursor = endianness::decode<float>(cursor, accelerations[i], end);
+    }
+    float covPosition[3];
+    for (int i = 0; i < 3; ++i) {
+        cursor = endianness::decode<float>(cursor, covPosition[i], end);
+    }
+    float covVelocity[3];
+    for (int i = 0; i < 3; ++i) {
+        cursor = endianness::decode<float>(cursor, covVelocity[i], end);
+    }
+    float covQuaternions[10];
+    for (int i = 0; i < 10; ++i) {
+        cursor = endianness::decode<float>(cursor, covQuaternions[i], end);
+    }
+    ++cursor;
+
+    auto time = base::Time::fromMilliseconds(time_ms);
+
+    FilterState state;
+    state.time = time;
+    state.mode = static_cast<FilterMode>(filterFlags & 0x7);
+    state.status = filterFlags >> 3;
+
+    base::samples::RigidBodyState rbs;
+    rbs.time = time;
+    rbs.orientation = Eigen::Quaterniond(values[0], values[1], values[2], values[3]);
+    rbs.orientation = valueNED2NWU(rbs.orientation);
+    rbs.angular_velocity = Eigen::Vector3d(values[4], values[5], values[6]);
+    rbs.cov_position =
+        base::Vector3d(covPosition[0], covPosition[1], covPosition[2])
+        .asDiagonal();
+    rbs.cov_velocity =
+        base::Vector3d(covVelocity[0], covVelocity[1], covVelocity[2])
+        .asDiagonal();
+
+    PeriodicUpdate result;
+    if (state.mode == OPMODE_INS) {
+        // IMU uses NED frame
+        rbs.velocity = Eigen::Vector3d(values[7], -values[8], -values[9]);
+
+        result.latitude = base::Angle::fromRad(lat_lon[0]);
+        result.longitude = base::Angle::fromRad(lat_lon[1]);
+        rbs.position.z() = alt;
+    }
+
+    MagneticInfo magnetic_info;
+    magnetic_info.time = time;
+    magnetic_info.magnetometers = Eigen::Vector3d(magInfo[0], magInfo[1], magInfo[2]);
+    magnetic_info.measured_euler_angles =
+        Eigen::Vector3d(magInfo[3], magInfo[4], magInfo[5]);
+    magnetic_info.declination = base::Angle::fromRad(magInfo[6]);
+
+    base::samples::RigidBodyAcceleration rba;
+    rba.time = rbs.time;
+    rba.acceleration =
+        base::Vector3d(accelerations[0], accelerations[1], accelerations[2]);
+
+    result.rbs = rbs;
+    result.rba = rba;
+    result.covQuaternion = std::vector<float>(
+        covQuaternions, covQuaternions + 10
+    );
+    result.magnetic_info = magnetic_info;
+    result.board_temperature = base::Temperature::fromCelsius(board_temperature_C);
     result.filter_state = state;
     return result;
 }
