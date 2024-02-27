@@ -49,12 +49,12 @@ namespace imu_aceinna_openimu {
         GPSProtocol gps_protocol = GPS_UBLOX;
         int32_t gps_baud_rate = 115200;
 
-        double hard_iron[2];
-        double soft_iron_ratio;
-        double soft_iron_angle;
+        double hard_iron[2] = { 0, 0 };
+        double soft_iron_ratio = 1;
+        double soft_iron_angle = 0;
 
-        base::Vector3d lever_arm;
-        base::Vector3d point_of_interest;
+        base::Vector3d lever_arm = base::Vector3d::Zero();;
+        base::Vector3d point_of_interest = base::Vector3d::Zero();
 
         bool operator ==(Configuration const& other) const;
         bool operator !=(Configuration const& other) const;
