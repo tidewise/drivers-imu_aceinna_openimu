@@ -261,9 +261,9 @@ int main(int argc, char** argv)
                           << " " << setprecision(1) << state.rbs.position.x() << " "
                           << " " << setprecision(1) << state.rbs.position.y() << " "
                           << " " << setprecision(1) << state.rbs.position.z() << " "
-                          << " " << setprecision(1) << state.rbs.velocity.x() << " "
-                          << " " << setprecision(1) << state.rbs.velocity.y() << " "
-                          << " " << setprecision(1) << state.rbs.velocity.z()
+                          << " " << setprecision(2) << state.rbs.velocity.x() << " "
+                          << " " << setprecision(2) << state.rbs.velocity.y() << " "
+                          << " " << setprecision(2) << state.rbs.velocity.z()
                           << std::endl;
             }
 
@@ -311,9 +311,9 @@ int main(int argc, char** argv)
                           << " " << setprecision(1) << state.latitude.getDeg() << " "
                           << " " << setprecision(1) << state.longitude.getDeg() << " "
                           << " " << setprecision(1) << state.rbs.position.z() << " "
-                          << " " << setprecision(1) << state.rbs.velocity.x() << " "
-                          << " " << setprecision(1) << state.rbs.velocity.y() << " "
-                          << " " << setprecision(1) << state.rbs.velocity.z() << " "
+                          << " " << setprecision(2) << state.rbs.velocity.x() << " "
+                          << " " << setprecision(2) << state.rbs.velocity.y() << " "
+                          << " " << setprecision(2) << state.rbs.velocity.z() << " "
                           << " " << setprecision(1) << state.rba.acceleration.x() << " "
                           << " " << setprecision(1) << state.rba.acceleration.y() << " "
                           << " " << setprecision(1) << state.rba.acceleration.z() << " "
