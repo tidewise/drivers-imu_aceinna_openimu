@@ -248,6 +248,7 @@ int main(int argc, char** argv)
         driver.openURI(uri);
         driver.validateDevice();
         driver.writePeriodicPacketConfiguration("e2", 10);
+        std::cout << "Time Mode Roll Pitch Yaw Lat Lon Alt Vx Vy Vz\n";
         while (true) {
             if (driver.processOne()) {
                 auto state = driver.getLastPeriodicUpdate();
@@ -298,6 +299,7 @@ int main(int argc, char** argv)
         driver.openURI(uri);
         driver.validateDevice();
         driver.writePeriodicPacketConfiguration("e5", 10);
+        std::cout << "Time Mode Roll Pitch Yaw Lat Lon Alt Vx Vy Vz Ax Ay Az Temp\n";
         while (true) {
             if (driver.processOne()) {
                 auto state = driver.getLastPeriodicUpdate();
