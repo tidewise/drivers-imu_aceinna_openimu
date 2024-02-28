@@ -680,23 +680,30 @@ PeriodicUpdate protocol::parseE5Output(uint8_t const* buffer, int bufferSize)
     state.mode = static_cast<FilterMode>(filterFlags & 0x7);
     state.status = filterFlags >> 3;
 
+    if (state.mode < OPMODE_AHRS_HIGH_GAIN) {
+        PeriodicUpdate result;
+        result.filter_state = state;
+        result.board_temperature = base::Temperature::fromCelsius(board_temperature_C);
+        return result;
+    }
+
     base::samples::RigidBodyState rbs;
     rbs.time = time;
     auto q_ned = Eigen::Quaterniond(q[0], q[1], q[2], q[3]);
     rbs.orientation = valueNED2NWU(q_ned);
     rbs.angular_velocity = arrayToVector(angular_velocity);
-    rbs.cov_position = arrayToCovarianceMatrix(covPosition);
-    rbs.cov_velocity = arrayToCovarianceMatrix(covVelocity);
 
-    PeriodicUpdate result;
+    base::Angle latitude, longitude;
     if (state.mode == OPMODE_INS) {
         // IMU uses NED frame
         Eigen::Vector3d velocity_ned = arrayToVector(velocity);
         rbs.velocity = velocity_ned.cwiseProduct(Eigen::Vector3d(1, -1, -1));
 
-        result.latitude = base::Angle::fromRad(lat_lon[0]);
-        result.longitude = base::Angle::fromRad(lat_lon[1]);
+        latitude = base::Angle::fromRad(lat_lon[0]);
+        longitude = base::Angle::fromRad(lat_lon[1]);
         rbs.position.z() = alt;
+        rbs.cov_position = arrayToCovarianceMatrix(covPosition);
+        rbs.cov_velocity = arrayToCovarianceMatrix(covVelocity);
     }
 
     MagneticInfo magnetic_info;
@@ -709,8 +716,11 @@ PeriodicUpdate protocol::parseE5Output(uint8_t const* buffer, int bufferSize)
     rba.time = rbs.time;
     rba.acceleration = arrayToVector(accelerations);
 
+    PeriodicUpdate result;
     result.rbs = rbs;
     result.rba = rba;
+    result.latitude = latitude;
+    result.longitude = longitude;
     result.covQuaternion = arrayToCovarianceMatrix(covQuaternions);
     result.magnetic_info = magnetic_info;
     result.board_temperature = base::Temperature::fromCelsius(board_temperature_C);

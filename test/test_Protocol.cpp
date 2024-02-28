@@ -706,5 +706,164 @@ TEST_F(ProtocolTest, it_parses_a_e5_INS_message)
 
 TEST_F(ProtocolTest, it_ignores_the_position_in_e5_if_the_mode_is_not_INS)
 {
+    uint8_t msg[] = {
+        0x10, 0x20, 0x30, 0x40, // time
+        0x02, // AHRS High Gain
+        0xe2, // -30 -> temperature
+        0, 0, 0, 0, // [0, 1, 2, 3] -> q[4]
+        0, 0, 128, 63,
+        0, 0, 0, 64,
+        0, 0, 64, 64,
+        0, 0, 128, 64, // [4, 5, 6] -> angular velocity [3]
+        0, 0, 160, 64,
+        0, 0, 192, 64,
+        0, 0, 224, 64, // [7, 8, 9] -> velocity[3]
+        0, 0, 0, 65,
+        0, 0, 16, 65,
+        0, 0, 0, 0, 0, 0, 36, 64, // 10, latitude
+        0, 0, 0, 0, 0, 0, 38, 64, // 11, longitude
+        0, 0, 64, 65, // 12, altitude
+        0, 0, 80, 65, // [13, 14, 15] -> mag[3]
+        0, 0, 96, 65,
+        0, 0, 112, 65,
+        0, 0, 128, 65, // [16, 17, 18] -> measuredEulerAngles[3]
+        0, 0, 136, 65,
+        0, 0, 144, 65,
+        0, 0, 152, 65, // 19 -> magneticDeclination
+        0, 0, 160, 65, // [20, 21, 22] -> accelerations[3]
+        0, 0, 168, 65,
+        0, 0, 176, 65,
+        0, 0, 184, 65, // [23, 24, 25, 26, 27, 28] -> covPosition[6]
+        0, 0, 192, 65,
+        0, 0, 200, 65,
+        0, 0, 208, 65,
+        0, 0, 216, 65,
+        0, 0, 224, 65,
+        0, 0, 232, 65, // [29, 30, 31, 32, 33, 34] -> covVelocity[6]
+        0, 0, 240, 65,
+        0, 0, 248, 65,
+        0, 0, 0, 66,
+        0, 0, 4, 66,
+        0, 0, 8, 66,
+        0, 0, 12, 66, // [35, 36, 37, 38, 39, 40, 41, 42, 43, 44] -> covQuaternion[10]
+        0, 0, 16, 66,
+        0, 0, 20, 66,
+        0, 0, 24, 66,
+        0, 0, 28, 66,
+        0, 0, 32, 66,
+        0, 0, 36, 66,
+        0, 0, 40, 66,
+        0, 0, 44, 66,
+        0, 0, 48, 66
+    };
 
+    auto expected_time = base::Time::fromMilliseconds(0x40302010);
+    auto update = parseE5Output(msg, sizeof(msg));
+
+    ASSERT_EQ(update.filter_state.time, expected_time);
+    ASSERT_EQ(update.filter_state.mode, OPMODE_AHRS_HIGH_GAIN);
+    ASSERT_EQ(update.filter_state.status, 0);
+
+    ASSERT_EQ(update.rbs.time, expected_time);
+    auto ned_q = Eigen::Quaterniond(0, 1, 2, 3);
+    auto nwu_q = valueNED2NWU(ned_q);
+    ASSERT_TRUE(update.rbs.orientation.isApprox(nwu_q));
+    ASSERT_TRUE(update.rbs.angular_velocity.isApprox(Eigen::Vector3d(4, 5, 6)));
+    ASSERT_FALSE(update.rbs.hasValidVelocity());
+    ASSERT_TRUE(base::isUnknown(update.latitude.getRad()));
+    ASSERT_TRUE(base::isUnknown(update.longitude.getRad()));
+    ASSERT_FALSE(update.rbs.hasValidPosition());
+
+    ASSERT_EQ(update.magnetic_info.time, expected_time);
+    ASSERT_TRUE(update.magnetic_info.magnetometers.isApprox(Eigen::Vector3d(13, 14, 15)));
+    ASSERT_TRUE(update.magnetic_info.measured_euler_angles.isApprox(Eigen::Vector3d(16, 17, 18)));
+    ASSERT_NEAR(update.magnetic_info.declination.getRad(), base::Angle::fromRad(19).getRad(), 1e-6);
+    ASSERT_EQ(update.rba.time, expected_time);
+    ASSERT_TRUE(update.rba.acceleration.isApprox(Eigen::Vector3d(20, 21, 22)));
+
+    ASSERT_FALSE(update.rbs.hasValidPositionCovariance());
+    ASSERT_FALSE(update.rbs.hasValidVelocityCovariance());
+
+    Eigen::Matrix4d expectedCovQuaternion;
+    expectedCovQuaternion
+        << 35.0, 36.0, 37.0, 38.0,
+           36.0, 39.0, 40.0, 41.0,
+           37.0, 40.0, 42.0, 43.0,
+           38.0, 41.0, 43.0, 44.0;
+    ASSERT_TRUE(update.covQuaternion.isApprox(expectedCovQuaternion));
+    ASSERT_EQ(update.board_temperature.getCelsius(), -30);
+}
+
+TEST_F(ProtocolTest, it_returns_invalid_data_if_the_state_is_below_AHRS)
+{
+    uint8_t msg[] = {
+        0x10, 0x20, 0x30, 0x40, // time
+        0x01, // AHRS High Gain
+        0xe2, // -30 -> temperature
+        0, 0, 0, 0, // [0, 1, 2, 3] -> q[4]
+        0, 0, 128, 63,
+        0, 0, 0, 64,
+        0, 0, 64, 64,
+        0, 0, 128, 64, // [4, 5, 6] -> angular velocity [3]
+        0, 0, 160, 64,
+        0, 0, 192, 64,
+        0, 0, 224, 64, // [7, 8, 9] -> velocity[3]
+        0, 0, 0, 65,
+        0, 0, 16, 65,
+        0, 0, 0, 0, 0, 0, 36, 64, // 10, latitude
+        0, 0, 0, 0, 0, 0, 38, 64, // 11, longitude
+        0, 0, 64, 65, // 12, altitude
+        0, 0, 80, 65, // [13, 14, 15] -> mag[3]
+        0, 0, 96, 65,
+        0, 0, 112, 65,
+        0, 0, 128, 65, // [16, 17, 18] -> measuredEulerAngles[3]
+        0, 0, 136, 65,
+        0, 0, 144, 65,
+        0, 0, 152, 65, // 19 -> magneticDeclination
+        0, 0, 160, 65, // [20, 21, 22] -> accelerations[3]
+        0, 0, 168, 65,
+        0, 0, 176, 65,
+        0, 0, 184, 65, // [23, 24, 25, 26, 27, 28] -> covPosition[6]
+        0, 0, 192, 65,
+        0, 0, 200, 65,
+        0, 0, 208, 65,
+        0, 0, 216, 65,
+        0, 0, 224, 65,
+        0, 0, 232, 65, // [29, 30, 31, 32, 33, 34] -> covVelocity[6]
+        0, 0, 240, 65,
+        0, 0, 248, 65,
+        0, 0, 0, 66,
+        0, 0, 4, 66,
+        0, 0, 8, 66,
+        0, 0, 12, 66, // [35, 36, 37, 38, 39, 40, 41, 42, 43, 44] -> covQuaternion[10]
+        0, 0, 16, 66,
+        0, 0, 20, 66,
+        0, 0, 24, 66,
+        0, 0, 28, 66,
+        0, 0, 32, 66,
+        0, 0, 36, 66,
+        0, 0, 40, 66,
+        0, 0, 44, 66,
+        0, 0, 48, 66
+    };
+
+    auto expected_time = base::Time::fromMilliseconds(0x40302010);
+    auto update = parseE5Output(msg, sizeof(msg));
+
+    ASSERT_EQ(update.filter_state.time, expected_time);
+    ASSERT_EQ(update.filter_state.mode, OPMODE_INITIALIZING);
+    ASSERT_EQ(update.filter_state.status, 0);
+
+    ASSERT_TRUE(update.rbs.time.isNull());
+    ASSERT_TRUE(base::isUnknown(update.latitude.getRad()));
+    ASSERT_TRUE(base::isUnknown(update.longitude.getRad()));
+    ASSERT_TRUE(update.magnetic_info.time.isNull());
+    ASSERT_TRUE(update.rba.time.isNull());
+
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            ASSERT_TRUE(base::isUnknown(update.covQuaternion(i, j)));
+        }
+    }
+    ASSERT_EQ(update.board_temperature.getCelsius(), -30);
 }
