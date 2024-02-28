@@ -308,8 +308,8 @@ int main(int argc, char** argv)
                           << base::getPitch(state.rbs.orientation) * 180 / M_PI << " "
                           << " " << setprecision(1)
                           << base::getYaw(state.rbs.orientation) * 180 / M_PI << " "
-                          << " " << setprecision(1) << state.latitude.getDeg() << " "
-                          << " " << setprecision(1) << state.longitude.getDeg() << " "
+                          << " " << setprecision(5) << state.latitude.getDeg() << " "
+                          << " " << setprecision(5) << state.longitude.getDeg() << " "
                           << " " << setprecision(1) << state.rbs.position.z() << " "
                           << " " << setprecision(2) << state.rbs.velocity.x() << " "
                           << " " << setprecision(2) << state.rbs.velocity.y() << " "
