@@ -601,7 +601,7 @@ PeriodicUpdate protocol::parseE4Output(uint8_t const* buffer, int bufferSize)
     return result;
 }
 
-static Eigen::Matrix3d covarianceMatrix(std::array<float, 6> const& v) {
+static Eigen::Matrix3d arrayToCovarianceMatrix(std::array<float, 6> const& v) {
     Eigen::Matrix3d m = Eigen::Matrix3d::Zero();
     m(0, 0) = v[0];
     m(0, 1) = v[1];
@@ -612,7 +612,7 @@ static Eigen::Matrix3d covarianceMatrix(std::array<float, 6> const& v) {
     return m + m.triangularView<Eigen::StrictlyUpper>().transpose().toDenseMatrix();
 }
 
-static Eigen::Matrix4d covarianceMatrix(std::array<float, 10> const& v) {
+static Eigen::Matrix4d arrayToCovarianceMatrix(std::array<float, 10> const& v) {
     Eigen::Matrix4d m = Eigen::Matrix4d::Zero();
     m(0, 0) = v[0];
     m(0, 1) = v[1];
@@ -627,50 +627,51 @@ static Eigen::Matrix4d covarianceMatrix(std::array<float, 10> const& v) {
     return m + m.triangularView<Eigen::StrictlyUpper>().transpose().toDenseMatrix();
 }
 
+template<typename ArrayT, size_t Size>
+static Eigen::Matrix<double, Size, 1> arrayToVector(std::array<ArrayT, Size> const& a) {
+    Eigen::Matrix<ArrayT, Size, 1> m(a.data());
+    return m.template cast<double>();
+}
+
 PeriodicUpdate protocol::parseE5Output(uint8_t const* buffer, int bufferSize)
 {
     uint8_t const* end = buffer + bufferSize;
-
     uint8_t const* cursor = buffer;
+
     uint32_t time_ms;
-    cursor = endianness::decode<uint32_t>(buffer, time_ms, end);
-    uint8_t filterFlags = cursor[0];
-    ++cursor;
-    int8_t board_temperature_C = *reinterpret_cast<int8_t const*>(cursor);
-    ++cursor;
+    cursor = endianness::decode<uint32_t>(cursor, time_ms, end);
+    uint8_t filterFlags;
+    cursor = endianness::decode<uint8_t>(cursor, filterFlags, end);
+    int8_t board_temperature_C;
+    cursor = endianness::decode<int8_t>(cursor, board_temperature_C, end);
 
-    float values[10];
-    for (int i = 0; i < 10; ++i) {
-        cursor = endianness::decode<float>(cursor, values[i], end);
-    }
-    double lat_lon[2];
-    for (int i = 0; i < 2; ++i) {
-        cursor = endianness::decode<double>(cursor, lat_lon[i], end);
-    }
+    std::array<float, 4> q;
+    cursor = endianness::decode(cursor, q, end);
+    std::array<float, 3> angular_velocity;
+    cursor = endianness::decode(cursor, angular_velocity, end);
+    std::array<float, 3> velocity;
+    cursor = endianness::decode(cursor, velocity, end);
+    std::array<double, 2> lat_lon;
+    cursor = endianness::decode(cursor, lat_lon, end);
     float alt;
-    cursor = endianness::decode<float>(cursor, alt, end);
+    cursor = endianness::decode(cursor, alt, end);
 
-    float magInfo[7];
-    for (int i = 0; i < 7; ++i) {
-        cursor = endianness::decode<float>(cursor, magInfo[i], end);
-    }
-    float accelerations[3];
-    for (int i = 0; i < 3; ++i) {
-        cursor = endianness::decode<float>(cursor, accelerations[i], end);
-    }
+    std::array<float, 3> magnetometers;
+    cursor = endianness::decode(cursor, magnetometers, end);
+    std::array<float, 3> measured_euler_angles;
+    cursor = endianness::decode(cursor, measured_euler_angles, end);
+    float declination;
+    cursor = endianness::decode(cursor, declination, end);
+
+    std::array<float, 3> accelerations;
+    cursor = endianness::decode(cursor, accelerations, end);
+
     std::array<float, 6> covPosition;
-    for (int i = 0; i < 6; ++i) {
-        cursor = endianness::decode<float>(cursor, covPosition[i], end);
-    }
+    cursor = endianness::decode(cursor, covPosition, end);
     std::array<float, 6> covVelocity;
-    for (int i = 0; i < 6; ++i) {
-        cursor = endianness::decode<float>(cursor, covVelocity[i], end);
-    }
+    cursor = endianness::decode(cursor, covVelocity, end);
     std::array<float, 10> covQuaternions;
-    for (int i = 0; i < 10; ++i) {
-        cursor = endianness::decode<float>(cursor, covQuaternions[i], end);
-    }
-    ++cursor;
+    cursor = endianness::decode(cursor, covQuaternions, end);
 
     auto time = base::Time::fromMilliseconds(time_ms);
 
@@ -681,16 +682,17 @@ PeriodicUpdate protocol::parseE5Output(uint8_t const* buffer, int bufferSize)
 
     base::samples::RigidBodyState rbs;
     rbs.time = time;
-    rbs.orientation = Eigen::Quaterniond(values[0], values[1], values[2], values[3]);
-    rbs.orientation = valueNED2NWU(rbs.orientation);
-    rbs.angular_velocity = Eigen::Vector3d(values[4], values[5], values[6]);
-    rbs.cov_position = covarianceMatrix(covPosition);
-    rbs.cov_velocity = covarianceMatrix(covVelocity);
+    auto q_ned = Eigen::Quaterniond(q[0], q[1], q[2], q[3]);
+    rbs.orientation = valueNED2NWU(q_ned);
+    rbs.angular_velocity = arrayToVector(angular_velocity);
+    rbs.cov_position = arrayToCovarianceMatrix(covPosition);
+    rbs.cov_velocity = arrayToCovarianceMatrix(covVelocity);
 
     PeriodicUpdate result;
     if (state.mode == OPMODE_INS) {
         // IMU uses NED frame
-        rbs.velocity = Eigen::Vector3d(values[7], -values[8], -values[9]);
+        Eigen::Vector3d velocity_ned = arrayToVector(velocity);
+        rbs.velocity = velocity_ned.cwiseProduct(Eigen::Vector3d(1, -1, -1));
 
         result.latitude = base::Angle::fromRad(lat_lon[0]);
         result.longitude = base::Angle::fromRad(lat_lon[1]);
@@ -699,19 +701,17 @@ PeriodicUpdate protocol::parseE5Output(uint8_t const* buffer, int bufferSize)
 
     MagneticInfo magnetic_info;
     magnetic_info.time = time;
-    magnetic_info.magnetometers = Eigen::Vector3d(magInfo[0], magInfo[1], magInfo[2]);
-    magnetic_info.measured_euler_angles =
-        Eigen::Vector3d(magInfo[3], magInfo[4], magInfo[5]);
-    magnetic_info.declination = base::Angle::fromRad(magInfo[6]);
+    magnetic_info.magnetometers = arrayToVector(magnetometers);
+    magnetic_info.measured_euler_angles = arrayToVector(measured_euler_angles);
+    magnetic_info.declination = base::Angle::fromRad(declination);
 
     base::samples::RigidBodyAcceleration rba;
     rba.time = rbs.time;
-    rba.acceleration =
-        base::Vector3d(accelerations[0], accelerations[1], accelerations[2]);
+    rba.acceleration = arrayToVector(accelerations);
 
     result.rbs = rbs;
     result.rba = rba;
-    result.covQuaternion = covarianceMatrix(covQuaternions);
+    result.covQuaternion = arrayToCovarianceMatrix(covQuaternions);
     result.magnetic_info = magnetic_info;
     result.board_temperature = base::Temperature::fromCelsius(board_temperature_C);
     result.filter_state = state;
