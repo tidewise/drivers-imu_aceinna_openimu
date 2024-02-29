@@ -142,7 +142,10 @@ namespace imu_aceinna_openimu {
          */
         Status parseStatus(uint8_t const* buffer, int size);
 
-        template <typename T> T valueNED2NWU(T neu);
+        template <typename T> T valueNED2NWU(T neu)
+        {
+            return static_cast<T>(RotNED2NWU * neu);
+        }
 
         template <typename H> H covarianceNED2NWU(H neu);
 
@@ -151,6 +154,9 @@ namespace imu_aceinna_openimu {
 
         /** Parse the Tidewise-defined e4 package */
         PeriodicUpdate parseE4Output(uint8_t const* buffer, int bufferSize);
+
+        /** Parse the Tidewise-defined e5 package */
+        PeriodicUpdate parseE5Output(uint8_t const* buffer, int bufferSize);
     }
 }
 

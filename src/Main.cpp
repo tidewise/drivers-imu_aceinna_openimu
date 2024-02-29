@@ -116,6 +116,10 @@ int usage()
         << "Known commands:\n"
         << "  info              display information about the connected unit\n"
         << "  poll-pose         periodically display the pose output\n"
+        << "  poll-e5           periodically display information about the new E5\n"
+        << "                    in addition to all there is in poll-pose, it shows\n"
+        << "                    accelerations and temperatures. Requires a TW2 firmware\n"
+        << "  covariances       show covariances one time. Requires a TW2 firmware\n"
         << "  poll-mag          periodically display magnetic measurements\n"
         << "  reset             resets the IMU\n"
         << "\n"
@@ -248,6 +252,7 @@ int main(int argc, char** argv)
         driver.openURI(uri);
         driver.validateDevice();
         driver.writePeriodicPacketConfiguration("e2", 10);
+        std::cout << "Time Mode Roll Pitch Yaw Lat Lon Alt Vx Vy Vz\n";
         while (true) {
             if (driver.processOne()) {
                 auto state = driver.getLastPeriodicUpdate();
@@ -258,12 +263,67 @@ int main(int argc, char** argv)
                           << base::getPitch(state.rbs.orientation) * 180 / M_PI << " "
                           << " " << setprecision(1)
                           << base::getYaw(state.rbs.orientation) * 180 / M_PI << " "
-                          << " " << setprecision(1) << state.rbs.position.x() << " "
-                          << " " << setprecision(1) << state.rbs.position.y() << " "
+                          << " " << setprecision(5) << state.latitude.getDeg() << " "
+                          << " " << setprecision(5) << state.longitude.getDeg() << " "
                           << " " << setprecision(1) << state.rbs.position.z() << " "
-                          << " " << setprecision(1) << state.rbs.velocity.x() << " "
-                          << " " << setprecision(1) << state.rbs.velocity.y() << " "
-                          << " " << setprecision(1) << state.rbs.velocity.z()
+                          << " " << setprecision(2) << state.rbs.velocity.x() << " "
+                          << " " << setprecision(2) << state.rbs.velocity.y() << " "
+                          << " " << setprecision(2) << state.rbs.velocity.z()
+                          << std::endl;
+            }
+
+            usleep(poll_period_usec);
+        }
+    }
+    else if (cmd == "covariances") {
+        driver.openURI(uri);
+        driver.validateDevice();
+        driver.writePeriodicPacketConfiguration("e5", 10);
+        while (true) {
+            if (driver.processOne()) {
+                auto state = driver.getLastPeriodicUpdate();
+                std::cout << state.rbs.time << " " << state.filter_state.toString()
+                          << "\nPosition\n"
+                          << " " << setprecision(1) << state.rbs.cov_position
+                          << "\nVelocity\n"
+                          << " " << setprecision(1) << state.rbs.cov_velocity
+                          << "\nQuaternion\n"
+                          << " " << setprecision(1) << state.covQuaternion
+                          << std::endl;
+                break;
+            }
+        }
+    }
+    else if (cmd == "poll-e5") {
+        int poll_period_usec = 100000;
+        if (argc == 4) {
+            poll_period_usec = atof(argv[3]) * 1000000;
+        }
+
+        driver.openURI(uri);
+        driver.validateDevice();
+        driver.writePeriodicPacketConfiguration("e5", 10);
+        std::cout << "Time Mode Roll Pitch Yaw Lat Lon Alt Vx Vy Vz Ax Ay Az Temp\n";
+        while (true) {
+            if (driver.processOne()) {
+                auto state = driver.getLastPeriodicUpdate();
+                std::cout << state.rbs.time << " " << state.filter_state.toString()
+                          << fixed << " " << setprecision(1)
+                          << base::getRoll(state.rbs.orientation) * 180 / M_PI << " "
+                          << " " << setprecision(1)
+                          << base::getPitch(state.rbs.orientation) * 180 / M_PI << " "
+                          << " " << setprecision(1)
+                          << base::getYaw(state.rbs.orientation) * 180 / M_PI << " "
+                          << " " << setprecision(5) << state.latitude.getDeg() << " "
+                          << " " << setprecision(5) << state.longitude.getDeg() << " "
+                          << " " << setprecision(1) << state.rbs.position.z() << " "
+                          << " " << setprecision(2) << state.rbs.velocity.x() << " "
+                          << " " << setprecision(2) << state.rbs.velocity.y() << " "
+                          << " " << setprecision(2) << state.rbs.velocity.z() << " "
+                          << " " << setprecision(1) << state.rba.acceleration.x() << " "
+                          << " " << setprecision(1) << state.rba.acceleration.y() << " "
+                          << " " << setprecision(1) << state.rba.acceleration.z() << " "
+                          << " " << setprecision(1) << state.board_temperature.getCelsius()
                           << std::endl;
             }
 
