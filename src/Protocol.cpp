@@ -568,22 +568,30 @@ PeriodicUpdate protocol::parseE4Output(uint8_t const* buffer, int bufferSize)
 
     static const double deg2rad = M_PI / 180.0;
 
+    auto time = base::Time::fromMilliseconds(time_ms);
+
     FilterState state;
+    state.time = time;
     state.mode = static_cast<FilterMode>(filterFlags & 0x7);
     state.status = filterFlags >> 3;
 
-    rbs.time = rba.time = base::Time::fromMilliseconds(time_ms);
+    if (state.mode < OPMODE_AHRS_HIGH_GAIN) {
+        PeriodicUpdate result;
+        result.filter_state = state;
+        return result;
+    }
 
+    rbs.time = time;
     rbs.orientation = Eigen::Quaterniond(values[0], values[1], values[2], values[3]);
     rbs.orientation = valueNED2NWU(rbs.orientation);
     rbs.angular_velocity = Eigen::Vector3d(values[4], values[5], values[6]) * deg2rad;
 
-    PeriodicUpdate result;
+    base::Angle latitude, longitude;
     if (state.mode == OPMODE_INS) {
         rbs.velocity = Eigen::Vector3d(values[7], -values[8], -values[9]);
 
-        result.latitude = base::Angle::fromDeg(lat_lon_alt[0]);
-        result.longitude = base::Angle::fromDeg(lat_lon_alt[1]);
+        latitude = base::Angle::fromDeg(lat_lon_alt[0]);
+        longitude = base::Angle::fromDeg(lat_lon_alt[1]);
         rbs.position.z() = lat_lon_alt[2];
     }
 
@@ -594,6 +602,9 @@ PeriodicUpdate protocol::parseE4Output(uint8_t const* buffer, int bufferSize)
         Eigen::Vector3d(magInfo[3], magInfo[4], magInfo[5]);
     magnetic_info.declination = base::Angle::fromRad(magInfo[6]);
 
+    PeriodicUpdate result;
+    result.latitude = latitude;
+    result.longitude = longitude;
     result.rbs = rbs;
     result.rba = rba;
     result.magnetic_info = magnetic_info;
