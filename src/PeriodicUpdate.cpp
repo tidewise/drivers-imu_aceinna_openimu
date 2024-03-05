@@ -5,6 +5,10 @@ using namespace imu_aceinna_openimu;
 
 void PeriodicUpdate::computeNWUPosition(gps_base::UTMConverter const& converter)
 {
+    if (filter_state.mode != FilterMode::OPMODE_INS) {
+        return;
+    }
+
     gps_base::Solution latlonalt;
     latlonalt.latitude = latitude.getDeg();
     latlonalt.longitude = longitude.getDeg();
