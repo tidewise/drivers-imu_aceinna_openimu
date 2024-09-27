@@ -1,6 +1,7 @@
 #ifndef IMU_ACEINNA_OPENIMU_CONFIGURATION_HPP
 #define IMU_ACEINNA_OPENIMU_CONFIGURATION_HPP
 
+#include <base/Angle.hpp>
 #include <base/Eigen.hpp>
 #include <string>
 
@@ -55,6 +56,8 @@ namespace imu_aceinna_openimu {
 
         base::Vector3d lever_arm = base::Vector3d::Zero();;
         base::Vector3d point_of_interest = base::Vector3d::Zero();
+
+        base::Angle rtk_heading2mag_heading = base::Angle::unknown();
 
         bool operator ==(Configuration const& other) const;
         bool operator !=(Configuration const& other) const;
