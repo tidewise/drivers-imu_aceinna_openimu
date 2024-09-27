@@ -1,7 +1,7 @@
 rock_library(imu_aceinna_openimu
-    SOURCES Protocol.cpp Driver.cpp FilterState.cpp Configuration.cpp
+    SOURCES Parameter.cpp Protocol.cpp Driver.cpp FilterState.cpp Configuration.cpp
             PeriodicUpdate.cpp
-    HEADERS Protocol.hpp Driver.hpp Configuration.hpp DeviceInfo.hpp
+    HEADERS Parameter.hpp Protocol.hpp Driver.hpp Configuration.hpp DeviceInfo.hpp
             Endianness.hpp FilterState.hpp Status.hpp MagneticInfo.hpp PeriodicUpdate.hpp
             MagneticCalibration.hpp
     DEPS_PKGCONFIG base-types iodrivers_base gps_base)
