@@ -19,6 +19,10 @@ namespace imu_aceinna_openimu {
         char const* doc;
     };
 
+    enum FirmwareParameterIndex {
+        RTK_HEADING_TO_MAG_HEADING = 20
+    };
+
     inline constexpr Parameter PARAMETERS[] = {
         {"periodic-packet-type", 3, PARAM_STRING, nullptr},
         {"periodic-packet-rate", 4, PARAM_INTEGER, nullptr},
@@ -37,7 +41,9 @@ namespace imu_aceinna_openimu {
         {"point-of-interest-x", 17, PARAM_DOUBLE, nullptr},
         {"point-of-interest-y", 18, PARAM_DOUBLE, nullptr},
         {"point-of-interest-z", 19, PARAM_DOUBLE, nullptr},
-        {"rtk-heading-to-mag-heading", 20, PARAM_DOUBLE, "DEGREES"},
+        {"rtk-heading-to-mag-heading",
+         RTK_HEADING_TO_MAG_HEADING, PARAM_DOUBLE,
+         "DEGREES"},
         {nullptr, 0, PARAM_OTHER}
     };
 
