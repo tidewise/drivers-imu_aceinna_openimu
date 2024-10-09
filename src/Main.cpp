@@ -203,7 +203,7 @@ int main(int argc, char** argv)
 
         driver.openURI(uri);
         driver.validateDevice();
-        driver.writePeriodicPacketConfiguration("e2", 10);
+        driver.writePeriodicPacketConfiguration("e4", 10);
         std::cout << "Time Mode Roll Pitch Yaw Lat Lon Alt Vx Vy Vz\n";
         while (true) {
             if (driver.processOne()) {
