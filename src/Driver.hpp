@@ -138,6 +138,9 @@ namespace imu_aceinna_openimu {
         /** Configure the magnetic distortion compensation */
         void writeMagneticCalibration(MagneticCalibration const& calibration);
 
+        /** Configure the offset between rtk-heading and mag-heading */
+        void writeRTKHeading2MagHeading(base::Angle const& angle);
+
         /** Save the configuration to flash */
         void saveConfiguration();
 
