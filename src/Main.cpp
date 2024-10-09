@@ -136,6 +136,8 @@ int main(int argc, char** argv)
                  << "x=" << conf.point_of_interest.x() << ", "
                  << "y=" << conf.point_of_interest.y() << ", "
                  << "z=" << conf.point_of_interest.z() << "\n"
+                 << "RTK Heading to Mag Heading Offset: "
+                 << conf.rtk_heading2mag_heading.getDeg() << "\n"
                  << flush;
         }
         return 0;

@@ -16,7 +16,7 @@ namespace imu_aceinna_openimu {
     enum FilterStatus {
         LINEAR_ACCELERATION = 1,
         TURN_SWITCH = 2,
-        COURSE_USED_AS_HEADING = 4
+        RTK_USED_AS_HEADING = 4
     };
 
     struct FilterState {

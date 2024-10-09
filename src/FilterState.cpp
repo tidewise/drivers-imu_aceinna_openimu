@@ -31,8 +31,8 @@ string FilterState::toString() const
     if (status & TURN_SWITCH) {
         result += "|TURN_SWITCH";
     }
-    if (status & COURSE_USED_AS_HEADING) {
-        result += "|COURSE_USED_AS_HEADING";
+    if(status & RTK_USED_AS_HEADING) {
+        result += "|RTK_USED_AS_HEADING";
     }
 
     return result;
