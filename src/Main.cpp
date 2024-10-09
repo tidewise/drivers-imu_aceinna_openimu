@@ -179,6 +179,10 @@ int main(int argc, char** argv)
             double written_value = std::stod(param_value);
             driver.writeConfiguration(definition->index, written_value, true);
         }
+        else if (definition->type == PARAM_ANGLE) {
+            double written_value = std::stod(param_value);
+            driver.writeConfiguration(definition->index, written_value * 180.0 / M_PI, true);
+        }
         else if (definition->type == PARAM_ORIENTATION) {
             Configuration::Orientation written_value =
                 protocol::decodeOrientationString(param_value);
@@ -199,7 +203,7 @@ int main(int argc, char** argv)
 
         driver.openURI(uri);
         driver.validateDevice();
-        driver.writePeriodicPacketConfiguration("e2", 10);
+        driver.writePeriodicPacketConfiguration("e4", 10);
         std::cout << "Time Mode Roll Pitch Yaw Lat Lon Alt Vx Vy Vz\n";
         while (true) {
             if (driver.processOne()) {

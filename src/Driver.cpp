@@ -1,5 +1,6 @@
 #include <imu_aceinna_openimu/Driver.hpp>
 #include <imu_aceinna_openimu/Protocol.hpp>
+#include <imu_aceinna_openimu/Parameter.hpp>
 #include <iostream>
 
 using namespace std;
@@ -258,6 +259,11 @@ void Driver::writeMagneticCalibration(MagneticCalibration const& calibration)
     writeConfiguration<double>(11, calibration.hard_iron.y());
     writeConfiguration<double>(12, calibration.soft_iron_ratio);
     writeConfiguration<double>(13, calibration.soft_iron_angle.getRad());
+}
+
+void Driver::writeRTKHeading2MagHeading(base::Angle const& angle)
+{
+    writeConfiguration<double>(RTK_HEADING_TO_MAG_HEADING, angle.getRad());
 }
 
 int Driver::extractPacket(uint8_t const* buffer, size_t bufferSize) const

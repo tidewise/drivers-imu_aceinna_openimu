@@ -9,6 +9,7 @@ namespace imu_aceinna_openimu {
         PARAM_INTEGER,
         PARAM_ORIENTATION,
         PARAM_DOUBLE,
+        PARAM_ANGLE,
         PARAM_OTHER
     };
 
@@ -42,7 +43,7 @@ namespace imu_aceinna_openimu {
         {"point-of-interest-y", 18, PARAM_DOUBLE, nullptr},
         {"point-of-interest-z", 19, PARAM_DOUBLE, nullptr},
         {"rtk-heading-to-mag-heading",
-         RTK_HEADING_TO_MAG_HEADING, PARAM_DOUBLE,
+         RTK_HEADING_TO_MAG_HEADING, PARAM_ANGLE,
          "DEGREES"},
         {nullptr, 0, PARAM_OTHER}
     };
