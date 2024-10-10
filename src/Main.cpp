@@ -299,7 +299,7 @@ int main(int argc, char** argv)
                           << state.magnetic_info.magnetometers[0] << " "
                           << state.magnetic_info.magnetometers[1] << " "
                           << state.magnetic_info.magnetometers[2] << " "
-                          << atan2(state.magnetic_info.magnetometers[2],
+                          << atan2(state.magnetic_info.magnetometers[1],
                                  state.magnetic_info.magnetometers[0]) *
                                  rad2deg
                           << " " << state.magnetic_info.measured_euler_angles[0] * rad2deg

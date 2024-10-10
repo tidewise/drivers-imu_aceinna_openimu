@@ -1,0 +1,36 @@
+#! /usr/bin/env ruby
+# frozen_string_literal: true
+
+require "syskit/log"
+require "syskit/log/dsl"
+extend Syskit::Log::DSL
+
+Orocos.load_typekit "iodrivers_base"
+Orocos.load_typekit "gps_base"
+
+dataset_id = ARGV[0]
+output_path = ARGV[1]
+
+def usage
+    STDERR.puts "usage: iodrivers_base_export_raw_io DATASET_ID TASK_NAME PORT_NAME OUTPUT_PATH"
+end
+
+unless ARGV.size == 2
+    usage
+    exit(ARGV.empty? ? 0 : 1)
+end
+
+dataset_select dataset_id
+
+# Can use the same means of interval selection or sub-sampling than in Jupyter notebooks,
+# e.g.
+#  interval_select roby.Seabots.Compositions.task_from_id(20)
+#  interval_sample_every seconds: 1
+
+export_to_single_file output_path, \
+  ublox_gps2_task.io_read_listener_port,
+  ublox_gps2_task.gps_solution_port \
+  do |io, gps|
+   io.add("raw_io")
+   gps.add("solution")
+end
