@@ -11,3 +11,10 @@ rock_executable(imu_aceinna_openimu_ctl Main.cpp
 
 rock_executable(imu_aceinna_openimu_nmea_publisher NMEAPublisher.cpp MainNMEAPublisher.cpp
     DEPS imu_aceinna_openimu)
+
+OPTION(BUILD_GPS_REPLAY "Build an internal tool to replay GPS log streams into the IMU" OFF)
+if (BUILD_GPS_REPLAY)
+    rock_executable(imu_aceinna_openimu_gps_replay MainGPSReplay.cpp
+       DEPS_PKGCONFIG iodrivers_base-typekit-gnulinux gps_base pocolog_cpp)
+    install(PROGRAMS imu_aceinna_openimu_gps_log_export DESTINATION bin)
+endif()
