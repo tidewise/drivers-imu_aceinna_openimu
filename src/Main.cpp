@@ -2,6 +2,7 @@
 #include <imu_aceinna_openimu/Driver.hpp>
 #include <imu_aceinna_openimu/Parameter.hpp>
 #include <imu_aceinna_openimu/Protocol.hpp>
+#include <base/Float.hpp>
 #include <iomanip>
 #include <iostream>
 
@@ -180,8 +181,11 @@ int main(int argc, char** argv)
             driver.writeConfiguration(definition->index, written_value, true);
         }
         else if (definition->type == PARAM_ANGLE) {
-            double written_value = std::stod(param_value);
-            driver.writeConfiguration(definition->index, written_value * M_PI / 180.0, true);
+            double written_value = base::unknown<double>();
+            if (param_value != "off") {
+                written_value = std::stod(param_value);
+            }
+            driver.writeConfiguration(definition->index, written_value * M_PI / 180.0, false);
         }
         else if (definition->type == PARAM_STRING) {
             driver.writeConfiguration(definition->index, param_value, true);
