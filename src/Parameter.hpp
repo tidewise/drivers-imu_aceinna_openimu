@@ -46,7 +46,7 @@ namespace imu_aceinna_openimu {
         {"point-of-interest-z", 19, PARAM_DOUBLE, nullptr},
         {"rtk-heading-to-mag-heading",
          CONF_RTK_HEADING_TO_MAG_HEADING, PARAM_ANGLE,
-         "DEGREES"},
+         "DEGREES, pass nan to disable"},
         {nullptr, 0, PARAM_OTHER}
     };
 
