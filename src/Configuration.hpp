@@ -6,15 +6,6 @@
 #include <string>
 
 namespace imu_aceinna_openimu {
-    enum OrientationAxis {
-        ORIENTATION_AXIS_PLUS_X,
-        ORIENTATION_AXIS_MINUS_X,
-        ORIENTATION_AXIS_PLUS_Y,
-        ORIENTATION_AXIS_MINUS_Y,
-        ORIENTATION_AXIS_PLUS_Z,
-        ORIENTATION_AXIS_MINUS_Z
-    };
-
     enum GPSProtocol {
         GPS_AUTO = -1,
         GPS_UBLOX = 0,
@@ -26,26 +17,12 @@ namespace imu_aceinna_openimu {
     };
 
     struct Configuration {
-        struct Orientation {
-            OrientationAxis forward = ORIENTATION_AXIS_PLUS_X;
-            OrientationAxis right = ORIENTATION_AXIS_PLUS_Y;
-            OrientationAxis down = ORIENTATION_AXIS_PLUS_Z;
-
-            Orientation();
-            Orientation(OrientationAxis forward,
-                OrientationAxis right,
-                OrientationAxis down);
-
-            bool operator==(Orientation const& other) const;
-            bool operator!=(Orientation const& other) const;
-        };
-
         std::string periodic_packet_type = "z1";
         int16_t periodic_packet_rate = 10;
         int16_t acceleration_low_pass_filter = 25;
         int16_t angular_velocity_low_pass_filter = 25;
 
-        Orientation orientation;
+        std::string orientation = "+X+Y+Z";
 
         GPSProtocol gps_protocol = GPS_UBLOX;
         int32_t gps_baud_rate = 115200;
@@ -74,7 +51,6 @@ namespace imu_aceinna_openimu {
     {
         return std::to_string(value);
     }
-    std::string to_string(Configuration::Orientation const& orientation);
 }
 
 #endif
