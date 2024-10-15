@@ -6,15 +6,6 @@
 #include <string>
 
 namespace imu_aceinna_openimu {
-    enum OrientationAxis {
-        ORIENTATION_AXIS_PLUS_X,
-        ORIENTATION_AXIS_MINUS_X,
-        ORIENTATION_AXIS_PLUS_Y,
-        ORIENTATION_AXIS_MINUS_Y,
-        ORIENTATION_AXIS_PLUS_Z,
-        ORIENTATION_AXIS_MINUS_Z
-    };
-
     enum GPSProtocol {
         GPS_AUTO = -1,
         GPS_UBLOX = 0,
@@ -26,26 +17,33 @@ namespace imu_aceinna_openimu {
     };
 
     struct Configuration {
-        struct Orientation {
-            OrientationAxis forward = ORIENTATION_AXIS_PLUS_X;
-            OrientationAxis right = ORIENTATION_AXIS_PLUS_Y;
-            OrientationAxis down = ORIENTATION_AXIS_PLUS_Z;
-
-            Orientation();
-            Orientation(OrientationAxis forward,
-                OrientationAxis right,
-                OrientationAxis down);
-
-            bool operator==(Orientation const& other) const;
-            bool operator!=(Orientation const& other) const;
-        };
-
         std::string periodic_packet_type = "z1";
         int16_t periodic_packet_rate = 10;
         int16_t acceleration_low_pass_filter = 25;
         int16_t angular_velocity_low_pass_filter = 25;
 
-        Orientation orientation;
+        /** Axis mapping between the physical IMU frame and the IMU output frame
+         *
+         * The three slots represent the X, Y and Z output axis of the IMU. The
+         * value in the slot is the IMU physical axis on which the output axis
+         * will be mapped.
+         *
+         * For instance, +Y+X-Z means that the X of the IMU's output frame is
+         * actually the +Y axis of the physical IMU, the Y of the IMU output
+         * frame is the +X of the physical IMU and Z is swapped
+         *
+         * Because of how the IMU filter is implemented, for best performance,
+         * the mapping must always keep the right-handed rule, should ensure
+         * that the (X, Y) plane is horizontal in the general case and that Z is
+         * pointing down.
+         *
+         * You can validate the last two criteria by looking at the measured
+         * roll and pitch columns of imu_aceinna_openimu_ctl poll-mag, and
+         * making sure they are zero. Do **not** use poll-pose for this as
+         * poll-pose converts to the NWU convention, which is *not* the IMU's
+         * internal convention
+         */
+        std::string orientation = "+X+Y+Z";
 
         GPSProtocol gps_protocol = GPS_UBLOX;
         int32_t gps_baud_rate = 115200;
@@ -74,7 +72,6 @@ namespace imu_aceinna_openimu {
     {
         return std::to_string(value);
     }
-    std::string to_string(Configuration::Orientation const& orientation);
 }
 
 #endif

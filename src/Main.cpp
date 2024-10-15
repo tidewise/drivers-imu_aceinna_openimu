@@ -183,11 +183,6 @@ int main(int argc, char** argv)
             double written_value = std::stod(param_value);
             driver.writeConfiguration(definition->index, written_value * M_PI / 180.0, true);
         }
-        else if (definition->type == PARAM_ORIENTATION) {
-            Configuration::Orientation written_value =
-                protocol::decodeOrientationString(param_value);
-            driver.writeConfiguration(definition->index, written_value, true);
-        }
         else if (definition->type == PARAM_STRING) {
             driver.writeConfiguration(definition->index, param_value, true);
         }

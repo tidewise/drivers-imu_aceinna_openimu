@@ -7,7 +7,6 @@ namespace imu_aceinna_openimu {
     enum ParameterType {
         PARAM_STRING,
         PARAM_INTEGER,
-        PARAM_ORIENTATION,
         PARAM_DOUBLE,
         PARAM_ANGLE,
         PARAM_OTHER
@@ -29,7 +28,9 @@ namespace imu_aceinna_openimu {
         {"periodic-packet-rate", 4, PARAM_INTEGER, nullptr},
         {"acceleration-filter", 5, PARAM_INTEGER, nullptr},
         {"angular-velocity-filter", 6, PARAM_INTEGER, nullptr},
-        {"orientation", 7, PARAM_ORIENTATION, nullptr},
+        {"orientation", 7, PARAM_STRING,
+            "Mapping between the IMU output axes and its physical axis "
+            "(+Y+Z+X maps +X output to +Y physical)"},
         {"gps-baudrate", 8, PARAM_INTEGER, nullptr},
         {"gps-protocol", 9, PARAM_OTHER, nullptr},
         {"hard-iron-x", 10, PARAM_DOUBLE, nullptr},
