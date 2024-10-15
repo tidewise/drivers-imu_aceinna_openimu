@@ -278,9 +278,9 @@ TEST_F(ProtocolTest, it_parses_a_configuration_response)
         0,
         0,
         0,
-        0x80,
-        0x56,
-        0x40, // rtk_heading2mag_heading -> 90.0
+        0,
+        0xf0,
+        '?', // rtk_heading2mag_heading -> 1.0
     };
 
     auto conf = parseConfiguration(&buffer[0], buffer.size());
@@ -303,7 +303,7 @@ TEST_F(ProtocolTest, it_parses_a_configuration_response)
     ASSERT_FLOAT_EQ(4, conf.point_of_interest.x());
     ASSERT_FLOAT_EQ(5, conf.point_of_interest.y());
     ASSERT_FLOAT_EQ(6, conf.point_of_interest.z());
-    ASSERT_FLOAT_EQ(90, conf.rtk_heading2mag_heading.getDeg());
+    ASSERT_FLOAT_EQ(1.0, conf.rtk_heading2mag_heading.getRad());
 }
 
 TEST_F(ProtocolTest,

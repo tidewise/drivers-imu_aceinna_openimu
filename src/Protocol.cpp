@@ -227,7 +227,7 @@ Configuration protocol::parseConfiguration(uint8_t const* buffer, int bufferSize
     double rtk_heading2mag_heading;
     if (cursor != end) {
         cursor = decode(cursor, rtk_heading2mag_heading, end);
-        ret.rtk_heading2mag_heading = base::Angle::fromDeg(rtk_heading2mag_heading);
+        ret.rtk_heading2mag_heading = base::Angle::fromRad(rtk_heading2mag_heading);
     }
 
     return ret;
