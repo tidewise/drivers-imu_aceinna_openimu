@@ -292,6 +292,7 @@ int main(int argc, char** argv)
         driver.validateDevice();
         driver.writePeriodicPacketConfiguration("e4", 10);
         double const rad2deg = 180.0 / M_PI;
+        std::cout << "Time Bx By Bz MagHd Roll Pitch Yaw Decl\n";
         while (true) {
             if (driver.processOne()) {
                 auto state = driver.getLastPeriodicUpdate();
