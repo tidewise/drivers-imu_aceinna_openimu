@@ -20,7 +20,8 @@ namespace imu_aceinna_openimu {
     };
 
     enum FirmwareParameterIndex {
-        RTK_HEADING_TO_MAG_HEADING = 20
+        CONF_ORIENTATION = 7,
+        CONF_RTK_HEADING_TO_MAG_HEADING = 20
     };
 
     inline constexpr Parameter PARAMETERS[] = {
@@ -28,7 +29,7 @@ namespace imu_aceinna_openimu {
         {"periodic-packet-rate", 4, PARAM_INTEGER, nullptr},
         {"acceleration-filter", 5, PARAM_INTEGER, nullptr},
         {"angular-velocity-filter", 6, PARAM_INTEGER, nullptr},
-        {"orientation", 7, PARAM_STRING,
+        {"orientation", CONF_ORIENTATION, PARAM_STRING,
             "Mapping between the IMU output axes and its physical axis "
             "(+Y+Z+X maps +X output to +Y physical)"},
         {"gps-baudrate", 8, PARAM_INTEGER, nullptr},
@@ -44,7 +45,7 @@ namespace imu_aceinna_openimu {
         {"point-of-interest-y", 18, PARAM_DOUBLE, nullptr},
         {"point-of-interest-z", 19, PARAM_DOUBLE, nullptr},
         {"rtk-heading-to-mag-heading",
-         RTK_HEADING_TO_MAG_HEADING, PARAM_ANGLE,
+         CONF_RTK_HEADING_TO_MAG_HEADING, PARAM_ANGLE,
          "DEGREES"},
         {nullptr, 0, PARAM_OTHER}
     };
