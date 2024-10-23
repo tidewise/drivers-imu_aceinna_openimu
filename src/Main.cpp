@@ -181,7 +181,7 @@ int main(int argc, char** argv)
         }
         else if (definition->type == PARAM_ANGLE) {
             double written_value = std::stod(param_value);
-            driver.writeConfiguration(definition->index, written_value * M_PI / 180.0, true);
+            driver.writeConfiguration(definition->index, written_value * M_PI / 180.0, false);
         }
         else if (definition->type == PARAM_STRING) {
             driver.writeConfiguration(definition->index, param_value, true);
