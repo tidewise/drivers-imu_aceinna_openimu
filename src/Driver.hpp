@@ -141,6 +141,9 @@ namespace imu_aceinna_openimu {
         /** Configure the offset between rtk-heading and mag-heading */
         void writeRTKHeading2MagHeading(base::Angle const& angle);
 
+        /** Configure the mapping between output axes and physical axes of the IMU */
+        void writeOrientation(std::string const& orientation);
+
         /** Save the configuration to flash */
         void saveConfiguration();
 

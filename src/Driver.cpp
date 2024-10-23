@@ -263,7 +263,12 @@ void Driver::writeMagneticCalibration(MagneticCalibration const& calibration)
 
 void Driver::writeRTKHeading2MagHeading(base::Angle const& angle)
 {
-    writeConfiguration<double>(RTK_HEADING_TO_MAG_HEADING, angle.getRad());
+    writeConfiguration<double>(CONF_RTK_HEADING_TO_MAG_HEADING, angle.getRad());
+}
+
+void Driver::writeOrientation(std::string const& orientation)
+{
+    writeConfiguration(CONF_ORIENTATION, orientation);
 }
 
 int Driver::extractPacket(uint8_t const* buffer, size_t bufferSize) const
