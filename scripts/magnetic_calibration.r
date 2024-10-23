@@ -105,7 +105,7 @@ get.ellipse <- function( fit, n=360 )
   cbind(x=x, y=y)
 }
 
-magcal <- function(csv_path, x=1, y=3)
+magcal <- function(csv_path, x=1, y=2)
 {
     raw <- read.csv(csv_path, sep=" ")
     m <- as.matrix(raw)
