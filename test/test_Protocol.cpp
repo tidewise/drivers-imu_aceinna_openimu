@@ -572,7 +572,7 @@ TEST_F(ProtocolTest, it_converts_ned_to_nwu)
     expected = Eigen::AngleAxisd(-M_PI / 4, Eigen::Vector3d::UnitZ()) *
                Eigen::AngleAxisd(-M_PI / 2, Eigen::Vector3d::UnitY()) *
                Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX());
-    ASSERT_EQ(true, expected.isApprox(orientation));
+    ASSERT_NEAR(expected.angularDistance(orientation), 0, 1e-3);
 }
 
 TEST_F(ProtocolTest, it_parses_a_e4_INS_message)

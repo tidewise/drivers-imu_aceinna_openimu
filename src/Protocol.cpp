@@ -396,10 +396,22 @@ Status protocol::parseStatus(uint8_t const* buffer, int size)
     return ret;
 }
 
-template <typename H> H protocol::covarianceNED2NWU(H neu)
+// Transformation that rotates by PI the X axis. Usefull for NED/NWU convertions
+static const Eigen::Matrix3d RotNED2NWU_mat(
+    base::AngleAxisd(M_PI, base::Vector3d::UnitX()));
+static const Eigen::Quaterniond RotNED2NWU_q(
+    base::AngleAxisd(M_PI, base::Vector3d::UnitX()));
+static const Eigen::Matrix3d RotNWU2NED_mat(
+    base::AngleAxisd(-M_PI, base::Vector3d::UnitX()));
+
+Eigen::Quaterniond protocol::valueNED2NWU(Eigen::Quaterniond const& ned)
 {
-    neu = RotNED2NWU * neu * RotNWU2NED;
-    return neu;
+    return RotNED2NWU_q * ned;
+}
+
+Eigen::Matrix3d protocol::covarianceNED2NWU(Eigen::Matrix3d const& ned)
+{
+    return RotNED2NWU_mat * ned * RotNWU2NED_mat;
 }
 
 PeriodicUpdate protocol::parseE2Output(uint8_t const* buffer, int bufferSize)
