@@ -28,6 +28,7 @@ struct NMEAPublisherTest : public ::testing::Test {
     RawIODriver nmea;
 
     NMEAPublisherTest()
+        : publisher("GP")
     {
         auto fds = openSocketPair();
         publisher.openDevice("fd://" + to_string(fds.first));
@@ -76,26 +77,30 @@ TEST_F(NMEAPublisherTest, it_forwards_messages_from_the_forward_to_the_device)
     ASSERT_EQ(0, nmea.readRaw(buffer.data(), buffer.size(), Time::fromMilliseconds(100)));
 }
 
-TEST_F(NMEAPublisherTest, it_generates_valid_NMEA_messages_based_on_a_e4_message)
-{
-    // clang-format off
-    // Sample taken from an IMU log. Yaw = 91.6
-    // Log ID: 090aeb8eadaebeb3f36c992967ca, Time: 1665004477.344012
-    // Q_nwu=-0.19867369532585144 -0.18287518620491025 0.67453211545944214 0.68708944320678711
-    vector<uint8_t> e4{85, 85, 101, 52, 97, 97, 207, 31, 0, 4, 162, 67, 59, 62,
-        30, 113, 75, 190, 24, 229, 47, 191, 35, 174, 44, 63, 18, 182, 130, 191, 16,
-        92, 201, 62, 74, 168, 105, 191, 195, 107, 147, 189, 64, 213, 230, 59, 126,
-        255, 20, 189, 155, 52, 130, 155, 216, 234, 54, 192, 78, 25, 210, 29, 218,
-        149, 69, 192, 0, 0, 128, 227, 217, 241, 252, 191, 109, 64, 26, 190, 59, 223,
-        15, 62, 111, 236, 168, 188, 102, 197, 202, 191, 217, 219, 180, 60, 13, 196,
-        37, 64, 169, 31, 203, 190, 64, 134};
-    // clang-format on
+// clang-format off
+// Sample taken from an IMU log. Yaw = 91.6
+// Log ID: 090aeb8eadaebeb3f36c992967ca, Time: 1665004477.344012
+// Q_nwu=-0.19867369532585144 -0.18287518620491025 0.67453211545944214 0.68708944320678711
+static vector<uint8_t> IMU_E4_MESSAGE{
+    85, 85, 101, 52, 97, 97, 207, 31, 0, 4, 162, 67, 59, 62,
+    30, 113, 75, 190, 24, 229, 47, 191, 35, 174, 44, 63, 18, 182, 130, 191, 16,
+    92, 201, 62, 74, 168, 105, 191, 195, 107, 147, 189, 64, 213, 230, 59, 126,
+    255, 20, 189, 155, 52, 130, 155, 216, 234, 54, 192, 78, 25, 210, 29, 218,
+    149, 69, 192, 0, 0, 128, 227, 217, 241, 252, 191, 109, 64, 26, 190, 59, 223,
+    15, 62, 111, 236, 168, 188, 102, 197, 202, 191, 217, 219, 180, 60, 13, 196,
+    37, 64, 169, 31, 203, 190, 64, 134};
+// clang-format on
 
-    device.writePacket(e4.data(), e4.size());
+TEST_F(NMEAPublisherTest, it_generates_a_valid_HDT_message_based_on_a_e4_message)
+{
+    publisher.selectNMEAMessages(NMEA_PUBLISH_HDT);
+    device.writePacket(IMU_E4_MESSAGE.data(), IMU_E4_MESSAGE.size());
     publisher.process(Time::fromSeconds(1));
     vector<uint8_t> buffer(32768, 0);
-    ASSERT_EQ(e4.size(), forward.readRaw(buffer.data(), e4.size(), Time::fromSeconds(1)));
-    ASSERT_EQ(e4, vector<uint8_t>(buffer.begin(), buffer.begin() + e4.size()));
+    ASSERT_EQ(IMU_E4_MESSAGE.size(),
+        forward.readRaw(buffer.data(), IMU_E4_MESSAGE.size(), Time::fromSeconds(1)));
+    ASSERT_EQ(IMU_E4_MESSAGE,
+        vector<uint8_t>(buffer.begin(), buffer.begin() + IMU_E4_MESSAGE.size()));
 
     int size = nmea.readRaw(buffer.data(), buffer.size(), Time::fromMilliseconds(100));
     string msg(reinterpret_cast<char const*>(buffer.data()),

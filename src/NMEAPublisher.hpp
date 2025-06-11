@@ -2,6 +2,7 @@
 #define IMU_ACEINNA_OPENIMU_NMEAPUBLISHER_HPP
 
 #include <imu_aceinna_openimu/Driver.hpp>
+#include <imu_aceinna_openimu/NMEAMessages.hpp>
 #include <iodrivers_base/Driver.hpp>
 
 namespace imu_aceinna_openimu {
@@ -31,12 +32,20 @@ namespace imu_aceinna_openimu {
         RawIODriver m_forward;
         base::Time m_forward_read_timeout;
         RawIODriver m_nmea;
+        std::string m_talker;
+
+        uint32_t m_messages = NMEA_PUBLISH_HDT;
 
         int forwardToDevice();
         std::pair<bool, PeriodicUpdate> forwardFromDevice();
 
+        /** Adds generic NMEA "envelope" to a message content */
+        std::string makeNMEASentence(std::string const& content);
+
     public:
-        NMEAPublisher();
+        NMEAPublisher(std::string const& talker = "GN");
+
+        void selectNMEAMessages(uint32_t messages);
 
         void openDevice(std::string const& uri);
         void openForward(std::string const& uri, base::Time const& read_timeout);
@@ -46,6 +55,9 @@ namespace imu_aceinna_openimu {
         void publishNMEA(PeriodicUpdate const& update);
 
         void configureIMU();
+
+        /** Build a HDT sentence from an IMU update */
+        std::string getHDTSentence(base::samples::RigidBodyState const& rbs);
     };
 }
 

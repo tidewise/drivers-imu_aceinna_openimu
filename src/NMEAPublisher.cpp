@@ -7,7 +7,8 @@ using namespace imu_aceinna_openimu;
 using namespace std;
 using base::Time;
 
-NMEAPublisher::NMEAPublisher()
+NMEAPublisher::NMEAPublisher(string const& talker)
+    : m_talker(talker)
 {
     m_buffer.resize(BUFFER_SIZE);
 }
@@ -74,27 +75,48 @@ static uint8_t computeNMEAChecksum(string const& str)
     return checksum;
 }
 
+void NMEAPublisher::selectNMEAMessages(uint32_t messages) {
+    m_messages = messages;
+}
+
 void NMEAPublisher::publishNMEA(PeriodicUpdate const& update)
 {
-    if (base::isUnknown(update.rbs.orientation.w())) {
-        return;
+    string content;
+    if (m_messages & NMEA_PUBLISH_HDT) {
+        content += getHDTSentence(update.rbs);
     }
-    double heading = -update.rbs.getYaw();
+
+    if (!content.empty()) {
+        m_nmea.writePacket(reinterpret_cast<uint8_t const*>(content.data()),
+            content.length());
+    }
+}
+
+string NMEAPublisher::getHDTSentence(base::samples::RigidBodyState const& rbs) {
+    if (base::isUnknown(rbs.orientation.w())) {
+        return "";
+    }
+
+    double heading = -rbs.getYaw();
     if (heading < 0) {
         heading += 2 * M_PI;
     }
     heading = heading * 180 / M_PI;
 
     ostringstream str;
-    str << "GPHDT," << fixed << setprecision(1) << heading << ",T";
+    str << "HDT," << fixed << setprecision(1) << heading << ",T";
+    return makeNMEASentence(str.str());
+}
+
+string NMEAPublisher::makeNMEASentence(string const& content) {
+    stringstream str;
+    str << m_talker << content;
     uint8_t checksum = computeNMEAChecksum(str.str());
 
     str << "*" << setw(2) << setfill('0') << hex << uppercase
         << static_cast<int>(checksum);
 
-    string sentence = "$" + str.str() + "\r\n";
-    m_nmea.writePacket(reinterpret_cast<uint8_t const*>(sentence.data()),
-        sentence.length());
+    return "$" + str.str() + "\r\n";
 }
 
 bool NMEAPublisher::process(base::Time const& timeout)
