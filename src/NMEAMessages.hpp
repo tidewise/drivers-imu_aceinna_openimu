@@ -6,7 +6,8 @@ namespace imu_aceinna_openimu {
      */
     enum NMEAMessages {
         NMEA_PUBLISH_HDT = 1,
-        NMEA_PUBLISH_ZDA = 2
+        NMEA_PUBLISH_ZDA = 2,
+        NMEA_PUBLISH_GLL = 4
     };
 }
 

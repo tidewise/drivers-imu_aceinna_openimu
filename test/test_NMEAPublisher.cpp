@@ -128,6 +128,28 @@ TEST_F(NMEAPublisherTest, it_publishes_ZDA_messages_if_selected)
     ASSERT_EQ("$GPZDA", msg.substr(0, 6));
 }
 
+TEST_F(NMEAPublisherTest, it_generates_a_valid_GLL_message)
+{
+    base::Time t = base::Time::fromMicroseconds(1749671780052521ULL);
+    base::Angle lat = base::Angle::fromDeg(52.520008);
+    base::Angle lon = base::Angle::fromDeg(13.404954);
+    auto sentence = publisher.getGLLSentence(t, lat, lon);
+    ASSERT_EQ("$GPGLL,5231.2004800,N,1324.2972400,E,195620.05,A*3D\r\n", sentence);
+}
+
+TEST_F(NMEAPublisherTest, it_publishes_GLL_messages_if_selected)
+{
+    publisher.selectNMEAMessages(NMEA_PUBLISH_GLL);
+    device.writePacket(IMU_E4_MESSAGE.data(), IMU_E4_MESSAGE.size());
+    publisher.process(Time::fromSeconds(1));
+
+    vector<uint8_t> buffer(32768, 0);
+    int size = nmea.readRaw(buffer.data(), buffer.size(), Time::fromMilliseconds(100));
+    string msg(reinterpret_cast<char const*>(buffer.data()),
+        reinterpret_cast<char const*>(buffer.data()) + size);
+    ASSERT_EQ("$GPGLL", msg.substr(0, 6));
+}
+
 TEST_F(NMEAPublisherTest, it_ignores_an_invalid_orientation)
 {
     PeriodicUpdate update;

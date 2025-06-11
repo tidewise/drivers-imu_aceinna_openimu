@@ -61,6 +61,11 @@ namespace imu_aceinna_openimu {
 
         /** Build a ZDA sentence from Time::now */
         std::string getZDASentence(base::Time const& time = base::Time::now());
+
+        /** Build a GLL sentence from Time::now */
+        std::string getGLLSentence(base::Time const& t,
+            base::Angle const& lat,
+            base::Angle const& lon);
     };
 }
 

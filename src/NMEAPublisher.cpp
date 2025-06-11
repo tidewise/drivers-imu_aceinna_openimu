@@ -75,7 +75,8 @@ static uint8_t computeNMEAChecksum(string const& str)
     return checksum;
 }
 
-void NMEAPublisher::selectNMEAMessages(uint32_t messages) {
+void NMEAPublisher::selectNMEAMessages(uint32_t messages)
+{
     m_messages = messages;
 }
 
@@ -88,6 +89,9 @@ void NMEAPublisher::publishNMEA(PeriodicUpdate const& update)
     if (m_messages & NMEA_PUBLISH_ZDA) {
         content += getZDASentence();
     }
+    if (m_messages & NMEA_PUBLISH_GLL) {
+        content += getGLLSentence(update.rbs.time, update.latitude, update.longitude);
+    }
 
     if (!content.empty()) {
         m_nmea.writePacket(reinterpret_cast<uint8_t const*>(content.data()),
@@ -95,7 +99,8 @@ void NMEAPublisher::publishNMEA(PeriodicUpdate const& update)
     }
 }
 
-string NMEAPublisher::getHDTSentence(base::samples::RigidBodyState const& rbs) {
+string NMEAPublisher::getHDTSentence(base::samples::RigidBodyState const& rbs)
+{
     if (base::isUnknown(rbs.orientation.w())) {
         return "";
     }
@@ -111,12 +116,56 @@ string NMEAPublisher::getHDTSentence(base::samples::RigidBodyState const& rbs) {
     return makeNMEASentence(str.str());
 }
 
-string NMEAPublisher::getZDASentence(base::Time const& time) {
+static string formatGLLAngle(base::Angle const& angle)
+{
+    double deg_abs = abs(angle.getDeg());
+    int deg_i = floor(deg_abs);
+    double degmin = deg_i * 100 + (deg_abs - deg_i) * 60;
+
+    stringstream str;
+    str << fixed << setprecision(7) << degmin;
+    return str.str();
+}
+
+string NMEAPublisher::getGLLSentence(base::Time const& t,
+    base::Angle const& lat,
+    base::Angle const& lon)
+{
+    if (base::isUnknown(lat.getDeg())) {
+        return "";
+    }
+
+    auto lat_s = formatGLLAngle(lat);
+    char lat_code = lat.getDeg() >= 0 ? 'N' : 'S';
+    auto lon_s = formatGLLAngle(lon);
+    char lon_code = lon.getDeg() >= 0 ? 'E' : 'W';
+
+    uint64_t time_utc_ms = t.toMilliseconds();
+    time_t time_utc_s = time_utc_ms / 1000;
+    auto tm = gmtime(&time_utc_s);
+
+    stringstream str;
+    // clang-format off
+    str << "GLL,"
+        << lat_s << "," << lat_code << "," << lon_s << "," << lon_code << ","
+        << setfill('0')
+        << setw(2) << tm->tm_hour
+        << setw(2) << tm->tm_min
+        << setw(2) << tm->tm_sec
+        << "." << setw(2) << (time_utc_ms / 10) % 100 << ",A";
+    // clang-format on
+
+    return makeNMEASentence(str.str());
+}
+
+string NMEAPublisher::getZDASentence(base::Time const& time)
+{
     uint64_t time_utc_ms = time.toMilliseconds();
     time_t time_utc_s = time_utc_ms / 1000;
     auto tm = gmtime(&time_utc_s);
 
     stringstream str;
+    // clang-format off
     str << "ZDA," << setfill('0')
         << setw(2) << tm->tm_hour
         << setw(2) << tm->tm_min
@@ -126,11 +175,13 @@ string NMEAPublisher::getZDASentence(base::Time const& time) {
         << setw(2) << tm->tm_mon + 1 << ","
         << setw(4) << 1900 + tm->tm_year << ","
         << "00,00";
+    // clang-format on
 
     return makeNMEASentence(str.str());
 }
 
-string NMEAPublisher::makeNMEASentence(string const& content) {
+string NMEAPublisher::makeNMEASentence(string const& content)
+{
     stringstream str;
     str << m_talker << content;
     uint8_t checksum = computeNMEAChecksum(str.str());
