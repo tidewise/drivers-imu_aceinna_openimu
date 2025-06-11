@@ -58,6 +58,9 @@ namespace imu_aceinna_openimu {
 
         /** Build a HDT sentence from an IMU update */
         std::string getHDTSentence(base::samples::RigidBodyState const& rbs);
+
+        /** Build a ZDA sentence from Time::now */
+        std::string getZDASentence(base::Time const& time = base::Time::now());
     };
 }
 

@@ -85,6 +85,9 @@ void NMEAPublisher::publishNMEA(PeriodicUpdate const& update)
     if (m_messages & NMEA_PUBLISH_HDT) {
         content += getHDTSentence(update.rbs);
     }
+    if (m_messages & NMEA_PUBLISH_ZDA) {
+        content += getZDASentence();
+    }
 
     if (!content.empty()) {
         m_nmea.writePacket(reinterpret_cast<uint8_t const*>(content.data()),
@@ -105,6 +108,25 @@ string NMEAPublisher::getHDTSentence(base::samples::RigidBodyState const& rbs) {
 
     ostringstream str;
     str << "HDT," << fixed << setprecision(1) << heading << ",T";
+    return makeNMEASentence(str.str());
+}
+
+string NMEAPublisher::getZDASentence(base::Time const& time) {
+    uint64_t time_utc_ms = time.toMilliseconds();
+    time_t time_utc_s = time_utc_ms / 1000;
+    auto tm = gmtime(&time_utc_s);
+
+    stringstream str;
+    str << "ZDA," << setfill('0')
+        << setw(2) << tm->tm_hour
+        << setw(2) << tm->tm_min
+        << setw(2) << tm->tm_sec << "."
+        << setw(3) << time_utc_ms % 1000 << ","
+        << setw(2) << tm->tm_mday << ","
+        << setw(2) << tm->tm_mon + 1 << ","
+        << setw(4) << 1900 + tm->tm_year << ","
+        << "00,00";
+
     return makeNMEASentence(str.str());
 }
 

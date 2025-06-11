@@ -108,6 +108,26 @@ TEST_F(NMEAPublisherTest, it_generates_a_valid_HDT_message_based_on_a_e4_message
     ASSERT_EQ("$GPHDT,148.7,T*3F\r\n", msg);
 }
 
+TEST_F(NMEAPublisherTest, it_generates_a_valid_ZDA_message)
+{
+    base::Time t = base::Time::fromMicroseconds(1749671780052521ULL);
+    auto sentence = publisher.getZDASentence(t);
+    ASSERT_EQ("$GPZDA,195620.052,11,06,2025,00,00*5B\r\n", sentence);
+}
+
+TEST_F(NMEAPublisherTest, it_publishes_ZDA_messages_if_selected)
+{
+    publisher.selectNMEAMessages(NMEA_PUBLISH_ZDA);
+    device.writePacket(IMU_E4_MESSAGE.data(), IMU_E4_MESSAGE.size());
+    publisher.process(Time::fromSeconds(1));
+
+    vector<uint8_t> buffer(32768, 0);
+    int size = nmea.readRaw(buffer.data(), buffer.size(), Time::fromMilliseconds(100));
+    string msg(reinterpret_cast<char const*>(buffer.data()),
+        reinterpret_cast<char const*>(buffer.data()) + size);
+    ASSERT_EQ("$GPZDA", msg.substr(0, 6));
+}
+
 TEST_F(NMEAPublisherTest, it_ignores_an_invalid_orientation)
 {
     PeriodicUpdate update;
